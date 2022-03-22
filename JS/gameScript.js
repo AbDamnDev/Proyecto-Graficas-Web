@@ -15,6 +15,28 @@ let loadedAssets=0; //cuantos assets cargan
 const totalAssets=0; //cuantos deben cargar antes de obtener el deltatime
 var objects = []; //variable para almacenar los objetos a colisionar
 var localStorageInfo; //variable para acceder a las llaves del local storage, sera un objeto literal
+const rayFloor=new THREE.Vector3(0, -1, 0);
+const rayCasterDown= new THREE.Raycaster();
+var target = new THREE.Vector3();
+var mouseX = 0, mouseY = 0;
+var windowHalfX = window.innerWidth / 2;
+var windowHalfY = window.innerHeight / 2;
+const player={
+    death: false,
+    victory: false,
+    mixer: null, //objeto de threejs que permite manejar animaciones
+    handler: null, //valor que permite manejar la rotacion, animacion, etc
+    actions: {
+        idle: null,
+        walking: null,
+        death: null
+    }
+};
+const terrain={
+	handler:null
+}
+var terrenoColision=[];
+
 
 //shaders en constantes
 const _VS= `
@@ -37,10 +59,10 @@ void main()
 }`;
 const _FS= `
 uniform sampler2D blendMap;
-uniform sampler2D soilTex;
-uniform sampler2D stonesTex;
-uniform sampler2D pisoTex;
-uniform sampler2D mossTex;
+uniform sampler2D baseTex;
+uniform sampler2D redTex;
+uniform sampler2D greenTex;
+uniform sampler2D blueTex;
 
 varying vec2 vUV;
 
@@ -52,11 +74,11 @@ void main()
 
 	float tbBaseWeight = 1.0 - max(tbBlend.r, max(tbBlend.g, tbBlend.b));
 
-	vec4 base =  tbBaseWeight * texture2D(stonesTex, vUV * 10.0);
-	vec4 soil = tbBlend.r * texture2D(soilTex, vUV * 10.0);
-	vec4 piso = tbBlend.g * texture2D(pisoTex, vUV * 10.0);
-	vec4 moss = tbBlend.b * texture2D(mossTex, vUV * 10.0);
-	vec4 finalColor = vec4(0.0, 0.0, 0.0, 1.0) + base + soil + piso + moss;
+	vec4 base =  tbBaseWeight * texture2D(baseTex, vUV * 10.0);
+	vec4 red = tbBlend.r * texture2D(redTex, vUV * 10.0);
+	vec4 green = tbBlend.g * texture2D(greenTex, vUV * 10.0);
+	vec4 blue = tbBlend.b * texture2D(blueTex, vUV * 10.0);
+	vec4 finalColor = vec4(0.0, 0.0, 0.0, 1.0) + base + red + green + blue;
 	finalColor.a=tbBlend.a;
 	gl_FragColor= finalColor;
 }`;
@@ -119,34 +141,34 @@ function loadOBJWithMTL(path, objFile, mtlFile, onLoadCallback) {
 		});
 	}
 
-function onStartFloor(){ //esta funcion tambien hay que optimizarla para que cargue otras cosas
+function onStartFloor(bumpmap,blendmap,basemap,redmap,greenmap,bluemap){ //esta funcion tambien hay que optimizarla para que cargue otras cosas
 	const textureLoader=new THREE.TextureLoader();
     const textureRepeat=100;
     const bumpScale=200;
-    textureLoader.load('gameAssets/terrainTextures/terrain/bump2.jpg',(bump)=>{
+    textureLoader.load(bumpmap,(bump)=>{
     	//bump.wrapS=bump.wrapT=THREE.RepeatWrapping; tampoco se repite
     	//bump.repeat.multiplyScalar(textureRepeat); el bump no se repite lol
-    	textureLoader.load('gameAssets/terrainTextures/terrain/blendMap1.jpg',(blendmap)=>{
-    		textureLoader.load('gameAssets/terrainTextures/terrain/soil.jpg',(soil)=>{ //los demas si se repiten
-    			soil.wrapS=soil.wrapT=THREE.RepeatWrapping; 
-    			soil.repeat.multiplyScalar(textureRepeat); 
-    			textureLoader.load('gameAssets/terrainTextures/terrain/Piedras.jpg',(stones)=>{
-    				stones.wrapS=stones.wrapT=THREE.RepeatWrapping; 
-    				stones.repeat.multiplyScalar(textureRepeat); 
-    				textureLoader.load('gameAssets/terrainTextures/terrain/piso.jpg',(pisoPiedra)=>{
-    					pisoPiedra.wrapS=pisoPiedra.wrapT=THREE.RepeatWrapping; 
-    					pisoPiedra.repeat.multiplyScalar(textureRepeat); 
-    					textureLoader.load('gameAssets/terrainTextures/terrain/moss.jpg',(moss)=>{
-    						moss.wrapS=moss.wrapT=THREE.RepeatWrapping; 
-    						moss.repeat.multiplyScalar(textureRepeat); 
+    	textureLoader.load(blendmap,(blend)=>{
+    		textureLoader.load(basemap,(base)=>{ //los demas si se repiten
+    			base.wrapS=base.wrapT=THREE.RepeatWrapping; 
+    			base.repeat.multiplyScalar(textureRepeat); 
+    			textureLoader.load(redmap,(red)=>{
+    				red.wrapS=red.wrapT=THREE.RepeatWrapping; 
+    				red.repeat.multiplyScalar(textureRepeat); 
+    				textureLoader.load(greenmap,(green)=>{
+    					green.wrapS=green.wrapT=THREE.RepeatWrapping; 
+    					green.repeat.multiplyScalar(textureRepeat); 
+    					textureLoader.load(bluemap,(blue)=>{
+    						blue.wrapS=blue.wrapT=THREE.RepeatWrapping; 
+    						blue.repeat.multiplyScalar(textureRepeat); 
     						var customUniforms = {
 							bumpTex:	{ type: "t", value: bump },
 							bumpScale:	{ type: "f", value: bumpScale },
-							blendMap:   { type: "t", value: blendmap },
-							soilTex:	{ type: "t", value: soil },
-							stonesTex:	{ type: "t", value: stones },
-							pisoTex:	{ type: "t", value: pisoPiedra },
-							mossTex:	{ type: "t", value: moss },
+							blendMap:   { type: "t", value: blend },
+							baseTex:	{ type: "t", value: base },
+							redTex:	{ type: "t", value: red },
+							greenTex:	{ type: "t", value: green },
+							blueTex:	{ type: "t", value: blue },
 							};
 
 							var customMaterial = new THREE.ShaderMaterial( 
@@ -157,10 +179,12 @@ function onStartFloor(){ //esta funcion tambien hay que optimizarla para que car
 								// side: THREE.DoubleSide
 							});
 							var planeGeo = new THREE.PlaneGeometry( 1000, 1000, 100, 100 );
-							var plane = new THREE.Mesh(planeGeo, customMaterial );
-							plane.rotation.x = -Math.PI / 2;
-							plane.position.y = -130;
-							scene.add( plane );
+							var myplane = new THREE.Mesh(planeGeo, customMaterial );
+							myplane.name="terreno";
+							myplane.rotation.x = -Math.PI / 2;
+							myplane.position.y = -130;
+							terrenoColision.push(myplane);
+							scene.add( myplane );
 							loadedAssets++;
     					});
     				});
@@ -172,15 +196,11 @@ function onStartFloor(){ //esta funcion tambien hay que optimizarla para que car
 
 
 
-function onStartSkybox() {
+function onStartSkybox(path, skyarray) {
     const ctLoader = new THREE.CubeTextureLoader();
     ctLoader.setPath( 'gameAssets/terrainTextures/sky/' ); //necesitamos el path de la carpeta donde se encuentran todas
 
-    ctLoader.load( [
-        'px.jpg', 'nx.jpg',
-        'py.jpg', 'ny.jpg',
-        'pz.jpg', 'nz.jpg'
-    ], (cubeTexture) => {
+    ctLoader.load(skyarray, (cubeTexture) => {
         scene.background = cubeTexture;
         loadedAssets++;
     });
@@ -192,7 +212,40 @@ function setItemsOnGame(){
 }
 
 function onStartPlayer(){
+	loader.load('gameAssets/3dModels/kid/character.fbx', (model)=>{
+		model.scale.multiplyScalar(0.1);
+		player.handler=model;
+		model.name="Jugador";
+		model.position.set(0.0,25,0);
+		var terrain=scene.getObjectByName("terreno");
+		scene.add(model);
+		var position=new THREE.Vector3();
+		position.copy(player.handler.position);
+		//var yHeight=getYonTerrain(position,rayFloor);
+		//alert(player.handler.position.y);
+		/*var model = scene.getObjectByName("Jugador");
+		var terrain = scene.getObjectByName("terreno");
+		//model.position.y=getYonTerrain(model,rayFloor,terrain);
+		scene.updateMatrixWorld(true);
+		var position = new THREE.Vector3();
+		position.setFromMatrixPosition( model.matrixWorld );
+		//alert(position.x + ',' + position.y + ',' + position.z);
+		alert("model position is: "+ position.x + ',' + position.y + ',' + position.z);*/
+	});
 
+}
+function getYonTerrain(player,raydown){
+
+	rayCasterDown.set(player, raydown);
+	var collisionResults = rayCasterDown.intersectObject(terrenoColision[0],true);
+
+	if (collisionResults.length > 0 && collisionResults[0].distance > 0){
+	   const pointHeight = collisionResults[0].point.y;
+	   const relativeHeight = player.position.y - pointHeight;
+	   return relativeHeight;
+	}else{
+		return 0.0;
+	}
 
 }
 function onStartEnemies(){
@@ -202,23 +255,70 @@ function onStartEnemies(){
 
 function onStart(){
 	SetUpScene();
-	onStartSkybox();
-	onStartFloor();
+	onStartSkybox('gameAssets/terrainTextures/sky/',[ 'px.jpg', 'nx.jpg','py.jpg', 'ny.jpg','pz.jpg', 'nz.jpg']);
+	onStartFloor('gameAssets/terrainTextures/terrain/altura3.jpg','gameAssets/terrainTextures/terrain/blendMap1.jpg',
+	'gameAssets/terrainTextures/terrain/soil.jpg','gameAssets/terrainTextures/terrain/Piedras.jpg',	
+	'gameAssets/terrainTextures/terrain/piso.jpg','gameAssets/terrainTextures/terrain/moss.jpg');
 	setItemsOnGame();
 	onStartPlayer();
 	onStartEnemies();
+	window.addEventListener( 'resize', onWindowResize );
+	camera.position.set(0.0,25.0,5);
+	
+}
+function onWindowResize() {
+
+	camera.aspect = window.innerWidth / window.innerHeight;
+	camera.updateProjectionMatrix();
+	renderer.setSize( window.innerWidth, window.innerHeight );
+}
+function onmousemove( event ) {
+
+    mouseX = ( event.clientX - windowHalfX );
+    mouseY = ( event.clientY - windowHalfY );
 
 }
 
 function render(){
+
+	 	var miterreno=scene.getObjectByName("terreno");
 		requestAnimationFrame(render);
 		deltaTime = clock.getDelta();
+		var yaw = 0;
+		var forward = 0;
+		
+			if (keys["A"]) {
+				yaw = 10;
+			} else if (keys["D"]) {
+				yaw = -10;
+			}
+			if (keys["W"]) {
+				forward = -20;
+			} else if (keys["S"]) {
+				forward = 20;
+			}	
+			camera.rotation.y += yaw * deltaTime;
+			camera.translateZ(3*forward * deltaTime);
+			/*
+			target.x += ( mouseX - target.x ) * .2;
+    		target.y += ( - mouseY - target.y ) * .2;
+    		target.z = camera.position.z; // assuming the camera is located at ( 0, 0, z );
+
+    		camera.lookAt( target );
+    		*/
 
 		renderer.render(scene,camera);
 
 }
+function onKeyDown(event) {
+		keys[String.fromCharCode(event.keyCode)] = true;
+}
+function onKeyUp(event) {	
+	keys[String.fromCharCode(event.keyCode)] = false;
+}
 
-
-
+document.addEventListener('keydown', onKeyDown);
+document.addEventListener('keyup', onKeyUp);	
 onStart();
+window.addEventListener("mousemove", onmousemove, false);
 render();
