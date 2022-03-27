@@ -5,18 +5,24 @@ import * as LSManager from '../JS/localStorageManager.js';
 //global variables
 var scene;
 var camera;
+//estas variables son para multijugador local
+var cameras=[];
+var renderers=[];
+var players=[];
+//
 var loader; //variable que sirve como cargador FBX
 var renderer;
 var clock;
 var deltaTime;
 var listener; //cargador para audio
 var keys={}; //variable para almacenar las teclas presionadas
-let loadedAssets=0; //cuantos assets cargan
+var loadedAssets=0; //cuantos assets cargan
 const totalAssets=0; //cuantos deben cargar antes de obtener el deltatime
 var objects = []; //variable para almacenar los objetos a colisionar
 var localStorageInfo; //variable para acceder a las llaves del local storage, sera un objeto literal
 const rayFloor=new THREE.Vector3(0, -1, 0);
 const rayCasterDown= new THREE.Raycaster();
+var visibleSize = { width: window.innerWidth, height: window.innerHeight};
 var target = new THREE.Vector3();
 var mouseX = 0, mouseY = 0;
 var windowHalfX = window.innerWidth / 2;
@@ -26,15 +32,35 @@ const player={
     victory: false,
     mixer: null, //objeto de threejs que permite manejar animaciones
     handler: null, //valor que permite manejar la rotacion, animacion, etc
+    yaw:null,
+    forward:null,
     actions: {
         idle: null,
         walking: null,
-        death: null
+        death: null,
+        win:null
     }
+};
+const player2={
+	death: false,
+    victory: false,
+    mixer: null, //objeto de threejs que permite manejar animaciones
+    handler: null, //valor que permite manejar la rotacion, animacion, etc
+    yaw:null,
+    forward:null,
+    actions: {
+        idle: null,
+        walking: null,
+        death: null,
+        win:null
+    }
+
 };
 const terrain={
 	handler:null
-}
+};
+var myplane; //es el ultimo intento para que podamos agarrar el terreno
+var miplanito;
 var terrenoColision=[];
 
 
@@ -85,29 +111,82 @@ void main()
 
 
 //inicializamos las variables globales, luego las metemos a una funcion
-function SetUpScene(){
+function SetUpScene(gamemode){ //set para un solo jugador
 	scene=new THREE.Scene(); //crea la escena
-	camera= new THREE.PerspectiveCamera(45,window.innerWidth / window.innerHeight,0.1, 1000);
-	loader=new FBXLoader();
-	renderer= new THREE.WebGLRenderer();
 	clock= new THREE.Clock();
+	loader=new FBXLoader();
 	listener = new THREE.AudioListener(); //cargador de audio
-	camera.add( listener );
 	const monsterSound = new THREE.Audio(listener); //añadir sonido de monstruos/ruido de fondo
 	const runningChild = new THREE.Audio(listener);
 	const gameOverSound = new THREE.Audio(listener); //añadir sonido de derrota
 	const victorySound = new THREE.Audio(listener); //añadir sonido de victoria
-	renderer.setClearColor(new THREE.Color(1,1,1)); //setea el color a blanco
 	var ambientLight = new THREE.AmbientLight(new THREE.Color(1, 1, 1), 1.0);
-			scene.add(ambientLight);
+	scene.add(ambientLight);
 
-			var directionalLight = new THREE.DirectionalLight(new THREE.Color(1, 1, 0), 0.4);
-			directionalLight.position.set(0, 0, 1);
-			scene.add(directionalLight);
-	renderer.setSize(window.innerWidth,window.innerHeight);
-	//añadirlo al html
-	document.body.appendChild(renderer.domElement); //indica que el canvas en html es nuestro lienzo donde renderizamos
+	var directionalLight = new THREE.DirectionalLight(new THREE.Color(1, 1, 0), 0.4);
+	directionalLight.position.set(0, 0, 1);
+	scene.add(directionalLight);
+		if(gamemode=="single"){
+		
+			camera= new THREE.PerspectiveCamera(45,window.innerWidth / window.innerHeight,0.1, 1000);
+			
+			renderer= new THREE.WebGLRenderer();
+			camera.add( listener );
+			camera.position.set(0.0,25.0,40);
+			renderer.setClearColor(new THREE.Color(1,1,1)); //setea el color a blanco
+			renderer.setSize(window.innerWidth,window.innerHeight);
 
+			scene.add(camera);
+			camera.position.set(0,150,400);
+			camera.lookAt(scene.position);	
+			//añadirlo al html
+			document.body.appendChild(renderer.domElement); //indica que el canvas en html es nuestro lienzo donde renderizamos
+
+		}else if (gamemode=="multiplayerLocal"){
+			createCamera();
+			createCamera(); //almacenadas en cameras[0] y cameras[1]
+
+			createRenderer(new THREE.Color(0, 0, 0));
+			createRenderer(new THREE.Color(0.0, 0, 0));
+
+			cameras[0].add(listener);
+			cameras[1].add(listener);
+
+
+			scene.add(cameras[0]);
+			scene.add(cameras[1]);
+
+			cameras[0].position.set(0.0,25.0,5);
+			cameras[1].position.set(0.0,25.0,5);
+
+			cameras[0].lookAt(scene.position);	
+			cameras[1].lookAt(scene.position);
+
+
+			$("body").append('<div id="mainDiv" style="display: flex; height: 100px;"></div>');
+
+			
+			$("#mainDiv").append('<div style="width: 50%;" id="scene-section"></div>');
+			$("#mainDiv").append('<div style="flex-grow: 1;" id="scene-section-2"></div>');
+
+			$("#scene-section").append(renderers[0].domElement);
+			$("#scene-section-2").append(renderers[1].domElement);
+		}
+	
+
+}
+
+function createCamera() {
+	var camera = new THREE.PerspectiveCamera(75, visibleSize.width / visibleSize.height, 0.1, 100);
+	cameras.push(camera);
+}
+function createRenderer(color) {
+	var renderer = new THREE.WebGLRenderer( {precision: "mediump" } );
+	renderer.setClearColor(color);
+	renderer.setPixelRatio((visibleSize.width / 2) / visibleSize.height);
+	renderer.setSize(visibleSize.width / 2, visibleSize.height);
+
+	renderers.push(renderer);
 }
 
 //sacamos la informacion del Local Storage
@@ -139,15 +218,13 @@ function loadOBJWithMTL(path, objFile, mtlFile, onLoadCallback) {
 			});
 
 		});
-	}
+}
 
-function onStartFloor(bumpmap,blendmap,basemap,redmap,greenmap,bluemap){ //esta funcion tambien hay que optimizarla para que cargue otras cosas
+function onStartFloor(bumpmap,blendmap,basemap,redmap,greenmap,bluemap,heightPos){ //esta funcion tambien hay que optimizarla para que cargue otras cosas
 	const textureLoader=new THREE.TextureLoader();
     const textureRepeat=100;
     const bumpScale=200;
     textureLoader.load(bumpmap,(bump)=>{
-    	//bump.wrapS=bump.wrapT=THREE.RepeatWrapping; tampoco se repite
-    	//bump.repeat.multiplyScalar(textureRepeat); el bump no se repite lol
     	textureLoader.load(blendmap,(blend)=>{
     		textureLoader.load(basemap,(base)=>{ //los demas si se repiten
     			base.wrapS=base.wrapT=THREE.RepeatWrapping; 
@@ -179,12 +256,12 @@ function onStartFloor(bumpmap,blendmap,basemap,redmap,greenmap,bluemap){ //esta 
 								// side: THREE.DoubleSide
 							});
 							var planeGeo = new THREE.PlaneGeometry( 1000, 1000, 100, 100 );
-							var myplane = new THREE.Mesh(planeGeo, customMaterial );
+							myplane = new THREE.Mesh(planeGeo, customMaterial );
 							myplane.name="terreno";
 							myplane.rotation.x = -Math.PI / 2;
-							myplane.position.y = -130;
-							terrenoColision.push(myplane);
+							myplane.position.y = heightPos;
 							scene.add( myplane );
+							miplanito= scene.getObjectByName("terreno");
 							loadedAssets++;
     					});
     				});
@@ -211,37 +288,124 @@ function setItemsOnGame(){
 
 }
 
-function onStartPlayer(){
-	loader.load('gameAssets/3dModels/kid/character.fbx', (model)=>{
-		model.scale.multiplyScalar(0.1);
-		player.handler=model;
-		model.name="Jugador";
-		model.position.set(0.0,25,0);
-		var terrain=scene.getObjectByName("terreno");
-		scene.add(model);
-		var position=new THREE.Vector3();
-		position.copy(player.handler.position);
-		//var yHeight=getYonTerrain(position,rayFloor);
-		//alert(player.handler.position.y);
-		/*var model = scene.getObjectByName("Jugador");
-		var terrain = scene.getObjectByName("terreno");
-		//model.position.y=getYonTerrain(model,rayFloor,terrain);
-		scene.updateMatrixWorld(true);
-		var position = new THREE.Vector3();
-		position.setFromMatrixPosition( model.matrixWorld );
-		//alert(position.x + ',' + position.y + ',' + position.z);
-		alert("model position is: "+ position.x + ',' + position.y + ',' + position.z);*/
-	});
+function completeLoadPlayer(type, nombre, posicion,player){
+	if(type=="druida"){
+		loader.load('gameAssets/3dModels/druida/Druida.fbx',(model)=>{
+			model.scale.multiplyScalar(0.09);
+			model.rotation.y=THREE.Math.degToRad(-180); 
+			player.handler=model;
+			player.mixer=new THREE.AnimationMixer(player.handler);
 
+			loader.load('gameAssets/3dModels/druida/animations/Druida@Idle.fbx',(animacion1)=>{
+				const idleanimation=animacion1.animations[0];
+	            player.actions.idle=player.mixer.clipAction(idleanimation);
+	            player.actions.idle.play(); //reproducir animacion
+	            loadedAssets++;
+			});
+			loader.load('gameAssets/3dModels/druida/animations/Druida@Death.fbx', function (asset){ //cargar animacion
+	            const deathanimation=asset.animations[0];
+	            player.actions.death=player.mixer.clipAction(deathanimation);
+	            player.actions.death.loop=THREE.LoopOnce;  //que solo se ejecute una vez
+	            player.actions.death.clampWhenFinished=true; //cuando se acabaa se queda pausado en el ultimo frame
+	            loadedAssets++;
+        	});
+        	loader.load('gameAssets/3dModels/druida/animations/Druida@Victory.fbx', function (asset1){ //cargar animacion
+	            const victoryAnimation=asset1.animations[0];
+	            player.actions.win=player.mixer.clipAction(victoryAnimation);
+	            player.actions.win.loop=THREE.LoopOnce;  //que solo se ejecute una vez
+	            player.actions.win.clampWhenFinished=true; //cuando se acabaa se queda pausado en el ultimo frame
+	            loadedAssets++;
+        	});
+	        	loader.load('gameAssets/3dModels/druida/animations/Druida@Running.fbx', function (asset2){ //cargar animacion
+	            const walkanimation=asset2.animations[0];
+	            player.actions.walking=player.mixer.clipAction(walkanimation);
+	            loadedAssets++;
+        	});
+			model.name=nombre;
+			model.position.set(posicion.x,posicion.y,posicion.z);
+			player.yaw=0;
+			player.forward=0;
+			
+			
+			//model.add(camera);
+			//camera.position.set(0,25,0);
+			scene.add(model);
+
+		});
+			
+	}else if (type=="wendigo"){
+		loader.load('gameAssets/3dModels/wendigo/wendigo.fbx',(model)=>{
+			model.scale.multiplyScalar(0.2);
+			player.handler=model;
+			player.mixer=new THREE.AnimationMixer(player.handler);
+
+			loader.load('gameAssets/3dModels/wendigo/animation/Wendigo@Idle.fbx',(animacion1)=>{
+				const idleanimation=animacion1.animations[0];
+	            player.actions.idle=player.mixer.clipAction(idleanimation);
+	            player.actions.idle.play(); //reproducir animacion
+	            loadedAssets++;
+			});
+			loader.load('gameAssets/3dModels/wendigo/animation/Wendigo@Dying.fbx', function (asset){ //cargar animacion
+	            const deathanimation=asset.animations[0];
+	            player.actions.death=player.mixer.clipAction(deathanimation);
+	            player.actions.death.loop=THREE.LoopOnce;  //que solo se ejecute una vez
+	            player.actions.death.clampWhenFinished=true; //cuando se acabaa se queda pausado en el ultimo frame
+	            loadedAssets++;
+        	});
+        	loader.load('gameAssets/3dModels/wendigo/animation/Wendigo@Victory.fbx', function (asset){ //cargar animacion
+	            const victoryAnimation=asset.animations[0];
+	            player.actions.win=player.mixer.clipAction(victoryAnimation);
+	            player.actions.win.loop=THREE.LoopOnce;  //que solo se ejecute una vez
+	            player.actions.win.clampWhenFinished=true; //cuando se acabaa se queda pausado en el ultimo frame
+	            loadedAssets++;
+        	});
+        	loader.load('gameAssets/3dModels/wendigo/animation/Wendigo@Running.fbx', function (asset){ //cargar animacion
+	            const walkanimation=asset.animations[0];
+	            player.actions.walking=player.mixer.clipAction(walkanimation);
+	            loadedAssets++;
+        	});
+			model.name=nombre;
+			model.position.set(posicion.x,posicion.y,posicion.z);
+			player.yaw=0;
+			player.forward=0;
+			scene.add(model);
+        	
+			
+
+		});
+	}
+			
 }
-function getYonTerrain(player,raydown){
+function loadPlayerS(playernumber,playertype){
+	if(playernumber==1){ //si solo es un jugador
+		var pos= new THREE.Vector3(0.0,17.5,5);
+		completeLoadPlayer(playertype,"Jugador",pos);
+	}else{
+		
+				var pos= new THREE.Vector3(0.0,17.5,5);
+				completeLoadPlayer(playertype,"Jugador1",pos,player);
+				player.yaw=0;
+				player.forward=0;
+				players.push(player);
+			
+				let pos2= new THREE.Vector3(5.0,17.5,5.0);
+				completeLoadPlayer(playertype,"Jugador2",pos2,player2);
+				var player1=scene.getObjectById("Jugador1");
+				//var player2=player1.clone();
+				players.push(player2);
+		}
 
-	rayCasterDown.set(player, raydown);
-	var collisionResults = rayCasterDown.intersectObject(terrenoColision[0],true);
+	}
+
+
+function getYonTerrain(player,raydown,terrenito){
+
+	rayCasterDown.set(player.handler, raydown);
+	var collisionResults = rayCasterDown.intersectObject(terrenito,true);
 
 	if (collisionResults.length > 0 && collisionResults[0].distance > 0){
 	   const pointHeight = collisionResults[0].point.y;
-	   const relativeHeight = player.position.y - pointHeight;
+	   const relativeHeight = player.handler.position.y - pointHeight;
 	   return relativeHeight;
 	}else{
 		return 0.0;
@@ -254,17 +418,15 @@ function onStartEnemies(){
 }
 
 function onStart(){
-	SetUpScene();
+	SetUpScene("multiplayerLocal");
 	onStartSkybox('gameAssets/terrainTextures/sky/',[ 'px.jpg', 'nx.jpg','py.jpg', 'ny.jpg','pz.jpg', 'nz.jpg']);
 	onStartFloor('gameAssets/terrainTextures/terrain/altura3.jpg','gameAssets/terrainTextures/terrain/blendMap1.jpg',
 	'gameAssets/terrainTextures/terrain/soil.jpg','gameAssets/terrainTextures/terrain/Piedras.jpg',	
-	'gameAssets/terrainTextures/terrain/piso.jpg','gameAssets/terrainTextures/terrain/moss.jpg');
+	'gameAssets/terrainTextures/terrain/piso.jpg','gameAssets/terrainTextures/terrain/moss.jpg',-130);
 	setItemsOnGame();
-	onStartPlayer();
+	loadPlayerS(2,"wendigo");
 	onStartEnemies();
 	window.addEventListener( 'resize', onWindowResize );
-	camera.position.set(0.0,25.0,5);
-	
 }
 function onWindowResize() {
 
@@ -278,28 +440,187 @@ function onmousemove( event ) {
     mouseY = ( event.clientY - windowHalfY );
 
 }
+let lastState='idle';
+let lastState2='idle';
+function onUpdateSinglePlayer(deltaTime){
+	 player.mixer.update(deltaTime); //para hacer el update de la animacion necesita un deltatime
+    if (!player.death){
+        let state='idle';
+	
+        if(keys['W']){
+        	player.forward=10;
+        	player.handler.translateZ(player.forward * deltaTime);
+            
+            state='walking';
+        }
+        if(keys['S']){
+        	player.forward=-10;
+            player.handler.translateZ(player.forward * deltaTime);
+            state='walking';
+            
+        }if(keys['A']){
+        	player.yaw=5;
+        	player.handler.rotation.y += player.yaw * deltaTime;
+		
+            
+        }if(keys['D']){
+        	player.yaw=-5;
+        	player.handler.rotation.y += player.yaw * deltaTime;
+		
+            
+        }
+
+		var relativeCameraOffset = new THREE.Vector3(0,11.5,-35);
+
+		var cameraOffset = relativeCameraOffset.applyMatrix4( player.handler.matrixWorld );
+
+		camera.position.x = cameraOffset.x;
+		camera.position.y = cameraOffset.y;
+		camera.position.z = cameraOffset.z;
+		camera.lookAt( player.handler.position);
+
+        if (lastState!=state){
+            const lastAnimation=player.actions[lastState];
+            const newAnimation=player.actions[state];
+
+            lastAnimation.reset(); //si se esta ejecutando en pausa o lo quesea, empiezo de nuevo
+            newAnimation.reset();
+
+            const crossFadeTime=0.2; //tiempo de transicion en seg
+            lastAnimation.crossFadeTo(newAnimation,crossFadeTime).play(); //para realizar la transicion suave
+            lastState=state;
+        }
+    }
+    /*if(player.handler.position.z<=doll.handler.position.z && !player.victory){ CONDICION DE VICTORIA
+        player.victory=true;
+        victorySound.play();
+        console.log("ganaste");
+
+    }*/
+
+}
+function onUpdateTwoPlayers(deltaTime){
+	players[0].mixer.update(deltaTime); //para hacer el update de la animacion necesita un deltatime
+    players[1].mixer.update(deltaTime);
+    if (!players[0].death){
+        let state='idle';
+
+        if(keys['W']){
+        	players[0].forward=10;
+        	players[0].handler.translateZ(players[0].forward * deltaTime);
+            
+            state='walking';
+        }
+        if(keys['S']){
+        	players[0].forward=-10;
+            players[0].handler.translateZ(players[0].forward * deltaTime);
+            state='walking';
+            
+        }if(keys['A']){
+        	players[0].yaw=5;
+        	players[0].handler.rotation.y += players[0].yaw * deltaTime;
+            
+        }if(keys['D']){
+        	players[0].yaw=-5;
+        	players[0].handler.rotation.y += players[0].yaw * deltaTime;
+            
+        }
+		//var heightTest=getYonTerrain(players[0],rayFloor,myplane);
+		let relativeCameraOffset = new THREE.Vector3(0,11.5,-35);
+
+		let cameraOffset = relativeCameraOffset.applyMatrix4( players[0].handler.matrixWorld );
+
+		cameras[0].position.x = cameraOffset.x;
+		cameras[0].position.y = cameraOffset.y;
+		cameras[0].position.z = cameraOffset.z;
+		cameras[0].lookAt( players[0].handler.position);
+
+        //cameras[0].position.x = players[0].handler.position.x;
+		//cameras[0].position.z = players[0].handler.position.z;
+
+        if (lastState!=state){
+            const lastAnimation=players[0].actions[lastState];
+            const newAnimation=players[0].actions[state];
+
+            lastAnimation.reset(); //si se esta ejecutando en pausa o lo quesea, empiezo de nuevo
+            newAnimation.reset();
+
+            const crossFadeTime=0.2; //tiempo de transicion en seg
+            lastAnimation.crossFadeTo(newAnimation,crossFadeTime).play(); //para realizar la transicion suave
+            lastState=state;
+        }
+    } //victory condition
+
+    if (!players[1].death){
+
+    	let state2='idle';
+
+        if(keys['I']){
+        	players[1].forward=10;
+        	players[1].handler.translateZ(players[1].forward * deltaTime);
+            
+            state2='walking';
+        }
+        if(keys['K']){
+        	players[1].forward=-10;
+            players[1].handler.translateZ(players[1].forward * deltaTime);
+            state2='walking';
+            
+        }if(keys['J']){
+        	players[1].yaw=5;
+        	players[1].handler.rotation.y += players[1].yaw * deltaTime;
+            
+        }if(keys['L']){
+        	players[1].yaw=-5;
+        	players[1].handler.rotation.y += players[1].yaw * deltaTime;
+            
+        }
+		let relativeCameraOffset = new THREE.Vector3(5,11.5,-35);
+
+		let cameraOffset = relativeCameraOffset.applyMatrix4( players[1].handler.matrixWorld );
+
+		cameras[1].position.x = cameraOffset.x;
+		cameras[1].position.y = cameraOffset.y;
+		cameras[1].position.z = cameraOffset.z;
+		cameras[1].lookAt( players[1].handler.position);
+
+        if (lastState2!=state2){
+            const lastAnimation=players[1].actions[lastState2];
+            const newAnimation=players[1].actions[state2];
+
+            lastAnimation.reset(); //si se esta ejecutando en pausa o lo quesea, empiezo de nuevo
+            newAnimation.reset();
+
+            const crossFadeTime=0.2; //tiempo de transicion en seg
+            lastAnimation.crossFadeTo(newAnimation,crossFadeTime).play(); //para realizar la transicion suave
+            lastState2=state2;
+        }
+    } //victory condition
+
+
+}
+
+function onUpdateSingle(deltaTime){
+	 onUpdateSinglePlayer(deltaTime); 
+}
+function onUpdateMulti(deltaTime){
+	onUpdateTwoPlayers(deltaTime);
+}
 
 function render(){
-
-	 	var miterreno=scene.getObjectByName("terreno");
+	 	
 		requestAnimationFrame(render);
 		deltaTime = clock.getDelta();
-		var yaw = 0;
-		var forward = 0;
+		if(loadedAssets>=4){
+			onUpdateSingle(deltaTime);
+			
+			renderer.render(scene,camera);
+		}
 		
-			if (keys["A"]) {
-				yaw = 10;
-			} else if (keys["D"]) {
-				yaw = -10;
-			}
-			if (keys["W"]) {
-				forward = -20;
-			} else if (keys["S"]) {
-				forward = 20;
-			}	
+		/*
 			camera.rotation.y += yaw * deltaTime;
 			camera.translateZ(3*forward * deltaTime);
-			/*
+			
 			target.x += ( mouseX - target.x ) * .2;
     		target.y += ( - mouseY - target.y ) * .2;
     		target.z = camera.position.z; // assuming the camera is located at ( 0, 0, z );
@@ -307,11 +628,21 @@ function render(){
     		camera.lookAt( target );
     		*/
 
-		renderer.render(scene,camera);
 
 }
+function renderTwo(){
+		requestAnimationFrame(renderTwo);
+		deltaTime = clock.getDelta();
+
+		if(loadedAssets>=4){
+			onUpdateMulti(deltaTime);
+			//var heightTest=getYonTerrain(players[0],rayFloor,miplanito);
+			renderers[0].render(scene, cameras[0]);
+			renderers[1].render(scene, cameras[1]);
+		}
+}
 function onKeyDown(event) {
-		keys[String.fromCharCode(event.keyCode)] = true;
+	keys[String.fromCharCode(event.keyCode)] = true;
 }
 function onKeyUp(event) {	
 	keys[String.fromCharCode(event.keyCode)] = false;
@@ -321,4 +652,5 @@ document.addEventListener('keydown', onKeyDown);
 document.addEventListener('keyup', onKeyUp);	
 onStart();
 window.addEventListener("mousemove", onmousemove, false);
-render();
+//render();
+renderTwo();
