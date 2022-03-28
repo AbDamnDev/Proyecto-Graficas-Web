@@ -1,0 +1,49 @@
+:root {
+    --color-white: #fff;
+    --color-red: #d3cc70;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    width: 100vw;
+    height: 80vh;
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color:black;
+    background-image: url("GAMEOVER.png");
+    background-repeat: no-repeat;
+    background-size: 990px 950px;
+    background-position: 50% 5%;
+  }
+
+  button {
+    background-color: transparent;
+    font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+    font-size:x-large;
+    border: 2px solid;
+    border-radius: 10px;
+    cursor: pointer;
+    margin: 2px 2px;
+    padding: 1.2rem 2.8rem;
+    color: var(--color-white);
+  }
+
+  button:focus {
+    outline: 0;
+  }
+
+  .btn_gameOverMenu {
+    border-color: var(--color-red);
+    box-shadow: 0 0 40px 40px var(--color-red) inset;
+    transition: box-shadow 0.2s ease-in-out;
+  }
+  .btn_gameOverMenu:hover {
+    box-shadow: 0 0 10px 0 var(--color-red) inset, 0 0 10px 4px var(--color-red);
+  }

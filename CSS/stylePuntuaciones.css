@@ -1,6 +1,6 @@
 :root {
     --color-white: #fff;
-    --color-red: #102C54;
+    --color-red: #d3cc70;
   }
   
 * {
@@ -16,6 +16,8 @@
   align-items: center;
   justify-content: center;
   background-color:black;
+  background-image: url("BOSQUE.jpg");
+  background-repeat: no-repeat;
   background-size: 1925px 950px;
   }
 

@@ -200,7 +200,7 @@ function createRenderer(color) {
 //al acabar el juego y guardar en la base de datos, ejecutamos la eliminacion del local storage
 //LSManager.eliminar();
 
-function loadOBJWithMTL(path, objFile, mtlFile, onLoadCallback) {
+function loadOBJWithMTL(path, objFile, mtlFile, _onLoadCallback) {
 		
 		var mtLoader = new THREE.MTLLoader();
 		mtLoader.setPath(path); //aqui ponemos la ruta del archivo
@@ -273,7 +273,7 @@ function onStartFloor(bumpmap,blendmap,basemap,redmap,greenmap,bluemap,heightPos
 
 
 
-function onStartSkybox(path, skyarray) {
+function onStartSkybox(_path, skyarray) {
     const ctLoader = new THREE.CubeTextureLoader();
     ctLoader.setPath( 'gameAssets/terrainTextures/sky/' ); //necesitamos el path de la carpeta donde se encuentran todas
 
@@ -285,6 +285,39 @@ function onStartSkybox(path, skyarray) {
 function setItemsOnGame(){
 	//en esta funcion vamos a cargar todos los modelos del escenario, el jugador y enemigos se cargan en otra
 	//ademas ocupamos información del local storage para saber que escenario cargar
+	loader.load('gameAssets/3dModels/Escenario/Laberintos1.fbx',(model)=>{
+		model.name="Laberinto";
+		model.scale.multiplyScalar(.05);
+		scene.add(model);
+		model.position.set(10,21,10);
+	});
+
+	loader.load('gameAssets/3dModels/Escenario/Arbol1.fbx',(model)=>{
+		model.name="Arbol1";
+		model.scale.multiplyScalar(0.02);
+		model.position.set(0,50,0);
+		scene.add(model);
+	});
+	loader.load('gameAssets/3dModels/Escenario/Arbol2.fbx',(model)=>{
+		model.name="Arbol12";
+		model.scale.multiplyScalar(0.02);
+		model.position.set(0,50,25);
+		scene.add(model);
+	});
+	loader.load('gameAssets/3dModels/Escenario/Arbol3.fbx',(model)=>{
+		model.name="Arbol3";
+		model.scale.multiplyScalar(0.02);
+		model.position.set(0,50,45);
+		scene.add(model);
+	});
+
+	loader.load('gameAssets/3dModels/Escenario/Arbol5.fbx',(model)=>{
+		model.name="Arbol5";
+		model.scale.multiplyScalar(0.02);
+		model.position.set(0,50,-20);
+		scene.add(model);
+	});
+
 
 }
 
@@ -373,6 +406,7 @@ function completeLoadPlayer(type, nombre, posicion,player){
 			
 
 		});
+
 	}
 			
 }

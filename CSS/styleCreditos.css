@@ -1,6 +1,6 @@
 :root {
     --color-white: #fff;
-    --color-red: #102C54;
+    --color-red: #d3cc70;
   }
   
 * {
@@ -16,22 +16,11 @@
   align-items: center;
   justify-content: center;
   background-color:black;
+  background-image: url("BOSQUE.jpg");
+  background-repeat: no-repeat;
   background-size: 1980px 940px;
   }
 
-  .rightsec{
-    background: transparent;
-    position:absolute;
-    top: 35%;
-    width: 10%;
-    height: 25%;
-    right: 40%;
-    z-index: 1;  
-    border: 5px solid #c0c0c0;
-    display: inline-grid;
-    place-items: center;
- 
-}
 
 button {
   background-color: transparent;
