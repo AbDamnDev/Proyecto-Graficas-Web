@@ -38,7 +38,7 @@ var directionalLight = new THREE.DirectionalLight(new THREE.Color(1, 1, 1), .5);
 directionalLight.position.y=1;
 directionalLight.target.position.set(0,0,0);
 const rayFloor=new THREE.Vector3(0, -1, 0);
-const rayCasterDown= new THREE.Raycaster();
+const raycaster= new THREE.Raycaster();
 var visibleSize = { width: window.innerWidth, height: window.innerHeight};
 var target = new THREE.Vector3();
 var mouseX = 0, mouseY = 0;
@@ -47,30 +47,68 @@ var windowHalfY = window.innerHeight / 2;
 const player={
     death: false,
     victory: false,
+    nameplayer: null,
+    typeplyer:"druida",
     mixer: null, //objeto de threejs que permite manejar animaciones
     handler: null, //valor que permite manejar la rotacion, animacion, etc
     yaw:null,
     forward:null,
+    keys: 0,
+    pEye:{
+    	active:false,
+    	time: 15,
+    	num: 0
+    },
+    pBoot:{
+    	active:false,
+    	time: 15,
+    	num: 0
+    },
+    pCoat:{
+    	active:false,
+    	time: 10,
+    	num: 0
+    },
     actions: {
         idle: null,
         walking: null,
         death: null,
         win:null
-    }
+    },
+    rayo:new THREE.Vector3(0, 0, 1)// front
 };
 const player2={
 	death: false,
     victory: false,
+    nameplayer: null,
+    typeplyer:"druida",
     mixer: null, //objeto de threejs que permite manejar animaciones
     handler: null, //valor que permite manejar la rotacion, animacion, etc
     yaw:null,
     forward:null,
+    keys: 0,
+    pEye:{
+    	active:false,
+    	time: 15,
+    	num: 0
+    },
+    pBoot:{
+    	active:false,
+    	time: 15,
+    	num: 0
+    },
+    pCoat:{
+    	active:false,
+    	time: 10,
+    	num: 0
+    },
     actions: {
         idle: null,
         walking: null,
         death: null,
         win:null
-    }
+    },
+    rayo:new THREE.Vector3(0, 0, 1)// front
 
 };
 const terrain={
@@ -80,6 +118,20 @@ var myplane; //es el ultimo intento para que podamos agarrar el terreno
 var miplanito;
 var terrenoColision=[];
 
+//audios
+var monsterSound; //añadir sonido de monstruos
+var AmbienceSound;
+var pickUpSound;
+var powerUp;
+var pickKey;
+var runningChild;
+var gameOverSound; //añadir sonido de derrota
+var childDeath;
+var victorySound;
+//boolean back play
+var backplay=false;
+
+var FirefliesEngine=null;
 
 
 //Aguwa
@@ -93,7 +145,7 @@ function buildWater() {
 	  {
 		textureWidth: 512,
 		textureHeight: 512,
-		waterNormals: new THREE.TextureLoader().load('../gameAssets/terrainTextures/terrain/4141-normal.jpg', function ( texture ) {
+		waterNormals: new THREE.TextureLoader().load('gameAssets/terrainTextures/terrain/4141-normal.jpg', function ( texture ) {
 		  texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
 		}),
 		alpha: 1.0,
@@ -227,10 +279,10 @@ function SetUpScene(gamemode){ //set para un solo jugador
 	clock= new THREE.Clock();
 	loader=new FBXLoader();
 	listener = new THREE.AudioListener(); //cargador de audio
-	const monsterSound = new THREE.Audio(listener); //añadir sonido de monstruos/ruido de fondo
+	/*const monsterSound = new THREE.Audio(listener); //añadir sonido de monstruos/ruido de fondo
 	const runningChild = new THREE.Audio(listener);
 	const gameOverSound = new THREE.Audio(listener); //añadir sonido de derrota
-	const victorySound = new THREE.Audio(listener); //añadir sonido de victoria
+	const victorySound = new THREE.Audio(listener); //añadir sonido de victoria*/
 	//const sky = buildSky();
 	//const sun = buildSun();
 	const water = buildWater();
@@ -294,6 +346,15 @@ function SetUpScene(gamemode){ //set para un solo jugador
 			$("#scene-section").append(renderers[0].domElement);
 			$("#scene-section-2").append(renderers[1].domElement);
 		}
+		monsterSound = new THREE.Audio(listener); //añadir sonido de monstruos
+		AmbienceSound=new THREE.Audio(listener);
+		pickUpSound= new THREE.Audio(listener);
+		powerUp= new THREE.Audio(listener);
+		pickKey= new THREE.Audio(listener);
+		runningChild = new THREE.Audio(listener);
+		gameOverSound = new THREE.Audio(listener); //añadir sonido de derrota
+		childDeath=new THREE.Audio(listener);
+		victorySound = new THREE.Audio(listener); //añadir sonido de victoria
 	
 
 }
@@ -1391,8 +1452,8 @@ function loadPlayerS(playernumber,playertype){
 
 function getYonTerrain(player,raydown,terrenito){
 
-	rayCasterDown.set(player.handler, raydown);
-	var collisionResults = rayCasterDown.intersectObject(terrenito,true);
+	raycaster.set(player.handler, raydown);
+	var collisionResults = raycaster.intersectObject(terrenito,true);
 
 	if (collisionResults.length > 0 && collisionResults[0].distance > 0){
 	   const pointHeight = collisionResults[0].point.y;
@@ -1400,6 +1461,138 @@ function getYonTerrain(player,raydown,terrenito){
 	   return relativeHeight;
 	}else{
 		return 0.0;
+	}
+
+}
+
+function onStartAudio(){
+
+	const audioLoader=new THREE.AudioLoader(); //cargador de audio
+	audioLoader.load('gameAssets/soundsfx/horror-ambience.wav', (audio)=>{
+		AmbienceSound.setBuffer(audio);
+		AmbienceSound.setLoop(true);
+		AmbienceSound.setVolume(0.15);
+		//.play();
+		loadedAssets++;
+	},
+    // onError callback
+    function ( err ) {
+            console.log( 'Un error ha ocurrido con el audio' );
+    });
+    audioLoader.load('gameAssets/soundsfx/level-up-02.wav', (audio)=>{
+		pickUpSound.setBuffer(audio);
+		pickUpSound.setVolume(0.4);
+		//.play();
+		loadedAssets++;
+	},
+    // onError callback
+    function ( err ) {
+            console.log( 'Un error ha ocurrido con el audio' );
+    });
+    audioLoader.load('gameAssets/soundsfx/power-boost.wav', (audio)=>{
+		powerUp.setBuffer(audio);
+		powerUp.setVolume(0.4);
+		//.play();
+		loadedAssets++;
+	},
+    // onError callback
+    function ( err ) {
+            console.log( 'Un error ha ocurrido con el audio' );
+    });
+    audioLoader.load('gameAssets/soundsfx/okay.wav', (audio)=>{
+		pickKey.setBuffer(audio);
+		pickKey.setVolume(0.4);
+		//.play();
+		loadedAssets++;
+	},
+    // onError callback
+    function ( err ) {
+            console.log( 'Un error ha ocurrido con el audio' );
+    });
+    audioLoader.load('gameAssets/soundsfx/victory.wav', (audio)=>{
+		victorySound.setBuffer(audio);
+		victorySound.setVolume(0.5);
+		//.play();
+		loadedAssets++;
+	},
+    // onError callback
+    function ( err ) {
+            console.log( 'Un error ha ocurrido con el audio' );
+    });
+    audioLoader.load('gameAssets/soundsfx/monster-growl.wav', (audio)=>{
+		monsterSound.setBuffer(audio);
+		monsterSound.setLoop(true);
+		monsterSound.setVolume(0.1);
+		//.play();
+		loadedAssets++;
+	},
+    // onError callback
+    function ( err ) {
+            console.log( 'Un error ha ocurrido con el audio' );
+    });
+    audioLoader.load('gameAssets/soundsfx/run.wav', (audio)=>{
+		runningChild.setBuffer(audio);
+		runningChild.setLoop(true);
+		runningChild.setVolume(0.6);
+		//.play();
+		loadedAssets++;
+	},
+    // onError callback
+    function ( err ) {
+            console.log( 'Un error ha ocurrido con el audio' );
+    });
+    audioLoader.load('gameAssets/soundsfx/death.wav', (audio)=>{
+		childDeath.setBuffer(audio);
+		//childDeath.setLoop(true);
+		childDeath.setVolume(0.6);
+		//.play();
+		loadedAssets++;
+	},
+    // onError callback
+    function ( err ) {
+            console.log( 'Un error ha ocurrido con el audio' );
+    });
+}
+function onStartParticles(){
+	const geometry = new THREE.BufferGeometry();
+	const vertices = [];
+	const materials = [];
+
+	const fireLoader=new THREE.TextureLoader();
+	const text=fireLoader.load( 'gameAssets/3dModels/billboards/spark.png');
+	for ( let i = 0; i < 200; i ++ ) {
+
+			const x = Math.random() * 200 - 100;
+			const y = Math.random() * 200 - 100;
+			const z = Math.random() * 200 - 100;
+
+			vertices.push( x, y, z );
+
+	}
+
+	geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( vertices, 3 ) );
+	let parameters = [
+					[[ 0.1, 1.0, 0.5 ], text, 10 ]
+				];
+	
+	for ( let i = 0; i < parameters.length; i ++ ) {
+
+		const color = parameters[ i ][ 0 ];
+		const sprite = parameters[ i ][ 1 ];
+		const size = parameters[ i ][ 2 ];
+
+		materials[ i ] = new THREE.PointsMaterial( { size: size, map: sprite, blending: THREE.AdditiveBlending, depthTest: false, transparent: true, opacity:1 } );
+		materials[ i ].color.setHSL( color[ 0 ], color[ 1 ], color[ 2 ] );
+
+		const particles = new THREE.Points( geometry, materials[ i ] );
+
+		particles.rotation.x = Math.random() * 6;
+		particles.rotation.y = Math.random() * 6;
+		particles.rotation.z = Math.random() * 6;
+
+		FirefliesEngine=particles;
+		scene.add( particles );
+
 	}
 
 }
@@ -1417,6 +1610,8 @@ function onStart(){
 	setItemsOnGame();
 	loadPlayerS(1,"druida");
 	onStartEnemies();
+	onStartAudio();
+	onStartParticles();
 	window.addEventListener( 'resize', onWindowResize );
 }
 function onWindowResize() {
@@ -1445,23 +1640,121 @@ function calculateLookat(cube){
     lookat.add(cube.position);
     return lookat;
 }
+function killPlayer(player){
+    childDeath.play();
+    player.death=true;
+    player.mixer.stopAllAction();
 
+    player.actions.death.play();
+
+}
+function getItem(colArray,player){
+	let itemName =new String();
+	itemName=colArray[0].object.parent.name;
+	if (itemName.match(/[0-9]/g)){
+		itemName=itemName.replace(/[0-9]/g, '');
+	}
+	switch(itemName){
+		case 'Key':{
+			player.keys=player.keys+1;
+			pickKey.play();
+		break;
+		}
+		case 'Boot':{
+			player.pBoot.num=player.pBoot.num+1;
+			pickUpSound.play();
+		break;
+		}
+		case 'Coat':{
+			player.pCoat.num=player.pCoat.num+1;
+			pickUpSound.play();
+		break;
+		}
+		case 'Eye':{
+			player.pEye.num=player.pEye.num+1;
+			pickUpSound.play();
+		break;
+		}
+		default:
+		break;
+
+	}
+	scene.remove(colArray[0].object.parent);
+	itemsCollectable=itemsCollectable.filter(function (item){
+		return item.parent!=null;
+	});
+
+}
+function getSpeed(deltaTime, player){
+	if(player.pBoot.active){ 
+		if(player.pBoot.time>0){
+			if(player.pBoot.time==15){
+				//por alguna razon lo tengo que poner antes y despues del play
+				player.pBoot.active=true; 
+				powerUp.play();
+				player.pBoot.active=true;
+			}
+			player.pBoot.time-=deltaTime; //vamos quitando tiempo
+			/*player.handler.children[0].material.transparent=true;
+			player.handler.children[0].material.opacity=0.5;*/
+			return 20; //asignamos la velocidad especial
+		}else{
+			player.pBoot.active=false; //desactivamos
+			player.pBoot.num=player.pBoot.num-1; //quitamos el que ya utilizamos
+			player.pBoot.time=15; //reseteamos tiempo
+			//esto sirve para la capa de invisibilidad
+			/*player.handler.children[0].material.transparent=false;
+			player.handler.children[0].material.opacity=1;*/
+			//$("body").append('<button>Hey</button>');agregar botones de manera dinamica
+			return 10; //asignamos la velocidad original
+		}
+	}else{
+		return 10;//asignamos la velocidad original
+		
+	}
+}
+function getInvisibility(deltaTime, player){
+	if(player.pCoat.active){
+		if(player.pCoat.time>0){
+			if(player.pCoat.time==10){
+				//por alguna razon lo tengo que poner antes y despues del play
+				player.pCoat.active=true; 
+				powerUp.play();
+				player.pCoat.active=true;
+			}
+			player.handler.children[0].material.transparent=true;
+			player.handler.children[0].material.opacity=0.5;
+			player.pCoat.time-=deltaTime;
+		}else{
+			player.handler.children[0].material.transparent=false;
+			player.handler.children[0].material.opacity=1;
+			player.pCoat.active=false; //desactivamos
+			player.pCoat.num=player.pCoat.num-1; //quitamos el que ya utilizamos
+			player.pCoat.time=10;
+		}
+
+	}else{
+		player.handler.children[0].material.transparent=false;
+		player.handler.children[0].material.opacity=1;
+	}
+}
 let lastState='idle';
 let lastState2='idle';
 function onUpdateSinglePlayer(deltaTime){
 	 player.mixer.update(deltaTime); //para hacer el update de la animacion necesita un deltatime
     if (!player.death){
         let state='idle';
-	
+		player.forward=getSpeed(deltaTime,player);
+		getInvisibility(deltaTime,player);
         if(keys['W']){
-        	player.forward=10;
+        	//player.forward=10;
         	player.handler.translateZ(player.forward * deltaTime);
             
             state='walking';
         }
         if(keys['S']){
         	player.forward=0;
-            player.handler.translateZ(player.forward * deltaTime);
+			player.handler.translateZ(-player.forward * deltaTime);
             state='walking';
             
         }if(keys['A']){
@@ -1472,8 +1765,43 @@ function onUpdateSinglePlayer(deltaTime){
         }if(keys['D']){
         	player.yaw=-5;
         	player.handler.rotation.y += player.yaw * deltaTime;
-		
-            
+        }if (keys['Z']){
+        	//ACTIVAR BOTAS desactivo todo lo demás
+        	if(player.pBoot.num>0){
+        		if(player.pBoot.active==false){
+        			//powerUp.play();
+        			player.pBoot.active=true;
+		        	player.pEye.active=false;
+		        	player.pCoat.active=false;
+        		}else{
+        			player.pBoot.active=false;
+        		}
+        	}
+        	
+        }if (keys['X']){
+        	//ACTIVAR CAPA
+	        	if(player.pCoat.num>0){
+	        		if(player.pCoat.active==false){
+	        			//powerUp.play();
+			        	player.pCoat.active=true;
+			        	player.pBoot.active=false;
+			        	player.pEye.active=false;
+			        }else{
+			        	player.pCoat.active=false;
+			        }
+        	}
+        }if (keys['C']){
+        	//ACTIVAR OJO
+        	if(player.pEye.num>0){
+        		if(player.pEye.active==false){
+        			//powerUp.play();
+		        	player.pEye.active=true;
+		        	player.pBoot.active=false;
+		        	player.pCoat.active=false;
+	        	}else{
+	        		player.pEye.active=false;
+	        	}
+        	}
         }
 
 
@@ -1494,14 +1822,46 @@ function onUpdateSinglePlayer(deltaTime){
             const crossFadeTime=0.2; //tiempo de transicion en seg
             lastAnimation.crossFadeTo(newAnimation,crossFadeTime).play(); //para realizar la transicion suave
             lastState=state;
+			if(player.typeplyer=="druida"){
+				runningChild.play();
+			}
+			
+        }else{
+        	if(state!="walking"){
+				if(player.typeplyer=="druida"){
+					if(runningChild.isPlaying){
+						runningChild.stop();
+					}
+				}
+        		
+        	}
+        	
         }
-    }
-    /*if(player.handler.position.z<=doll.handler.position.z && !player.victory){ CONDICION DE VICTORIA
+		if(loadedAssets>10){
+			//var rayo=player.rayo;
+			//var point=new THREE.Vector2(0,300);
+			//raycaster.setFromCamera(point,camera);
+			raycaster.set(player.handler.position, player.rayo);
+			var colision=raycaster.intersectObjects(itemsCollectable,true);
+
+			if(colision.length>0 &&colision[0].distance<=1 ){
+
+				//alert("si hay colision con el objeto: "+ colision[0].object.parent.name);
+				//si choca, que la camera no se pueda mover
+				getItem(colision,player);
+				colision=null;
+			}
+		}
+		/*if(player.handler.position.z<=doll.handler.position.z && !player.victory){ CONDICION DE VICTORIA
         player.victory=true;
         victorySound.play();
         console.log("ganaste");
 
     }*/
+    }else{
+    	//game over
+    }
+    
 
 }
 function onUpdateTwoPlayers(deltaTime){
@@ -1621,15 +1981,19 @@ function updateItems(deltatime,camera){
 		});
 	}
 }
-
+function updateParticles(deltaTime){
+	FirefliesEngine.rotation.y-=deltaTime*0.05;
+}
 function onUpdateSingle(deltaTime){
 	 onUpdateSinglePlayer(deltaTime); 
 	 updateItems(deltaTime,camera);
+	 updateParticles(deltaTime);
 }
 function onUpdateMulti(deltaTime){
 	onUpdateTwoPlayers(deltaTime);
 	updateItems(deltaTime,camera[0]);
 	updateItems(deltaTime,camera[1]);
+	updateParticles(deltaTime);
 
 }
 
@@ -2232,23 +2596,8 @@ if(escenaro2)
 			const time = performance.now() * 0.001;	
 			var Wat= scene.getObjectByName("Awita");
 			Wat.material.uniforms[ 'time' ].value += 1.0 / 60.0;
-
-
-
-
 			renderer.render(scene,camera);
 		}
-		
-		/*
-			camera.rotation.y += yaw * deltaTime;
-			camera.translateZ(3*forward * deltaTime);
-			
-			target.x += ( mouseX - target.x ) * .2;
-    		target.y += ( - mouseY - target.y ) * .2;
-    		target.z = camera.position.z; // assuming the camera is located at ( 0, 0, z );
-
-    		camera.lookAt( target );
-    		*/
 
 
 }
@@ -2265,6 +2614,9 @@ function renderTwo(){
 }
 function onKeyDown(event) {
 	keys[String.fromCharCode(event.keyCode)] = true;
+	if(!backplay){
+		AmbienceSound.play();
+	}
 }
 function onKeyUp(event) {	
 	keys[String.fromCharCode(event.keyCode)] = false;
