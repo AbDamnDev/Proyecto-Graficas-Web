@@ -1,0 +1,208 @@
+:root {
+    --color-white: #fff;
+    --color-red: #102C54;
+  }
+  
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+ }
+ body {
+  width: 100%;
+  height: 100%;
+  font-family: Verdana, Geneva, Tahoma, sans-serif;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color:black;
+  background-size: contain;
+  }
+  video {
+    width: 100%;
+    height: calc(100vw * 9 / 16);
+  }
+
+  .rightsec{
+    background: transparent;
+    position:absolute;
+    top: 20%;
+    width: 19%;
+    height: 30%;
+    right: 38%;
+    z-index: 1;  
+    border: 5px solid #c0c0c0;
+    display: inline-grid;
+    place-items: center;
+}
+
+.personajeBorde{
+  background: transparent;
+  position:absolute;
+  top: 20%;
+  width: 19%;
+  height: 30%;
+  right: 38%;
+  z-index: 1;  
+  border: 5px solid #c0c0c0;
+  display: inline-grid;
+  place-items: center;
+}
+
+.laberintoBorde{
+  background: transparent;
+  position:absolute;
+  top: 20%;
+  width: 19%;
+  height: 45%;
+  right: 38%;
+  z-index: 1;  
+  border: 5px solid #c0c0c0;
+  display: inline-grid;
+  place-items: center;
+}
+
+.volumenBorde{
+  background: transparent;
+  position:absolute;
+  top: 20%;
+  width: 19%;
+  height: 30%;
+  right: 38%;
+  z-index: 1;  
+  border: 5px solid #c0c0c0;
+  display: inline-grid;
+  place-items: center;
+}
+
+.graficasBorde{
+  background: transparent;
+  position:absolute;
+  top: 20%;
+  width: 8%;
+  height:8%;
+  right: 40%;
+  z-index: 1;  
+  border: 5px solid #c0c0c0;
+  display: inline-grid;
+  place-items: center;
+}
+
+button {
+    background-color: transparent;
+    font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+    font-size:x-large;
+    border: 2px solid;
+    border-radius: 10px;
+    cursor: pointer;
+    margin: 2px 2px;
+    padding: 1.2rem 2.8rem;
+    color: var(--color-white);
+  }
+
+  button:focus {
+    outline: 0;
+  }
+
+  .btn_modoSolitario {
+    border-color: var(--color-red);
+    box-shadow: 0 0 40px 40px var(--color-red) inset;
+    transition: box-shadow 0.2s ease-in-out;
+  }
+  .btn_modoSolitario:hover {
+    box-shadow: 0 0 10px 0 var(--color-red) inset, 0 0 10px 4px var(--color-red);
+  }
+
+  .btn_modoMultijugador {
+    border-color: var(--color-red);
+    box-shadow: 0 0 40px 40px var(--color-red) inset;
+    transition: box-shadow 0.2s ease-in-out;
+  }
+  .btn_modoMultijugador:hover {
+    box-shadow: 0 0 10px 0 var(--color-red) inset, 0 0 10px 4px var(--color-red);
+  }
+
+  .btn_modoDruida {
+    border-color: var(--color-red);
+    box-shadow: 0 0 40px 40px var(--color-red) inset;
+    transition: box-shadow 0.2s ease-in-out;
+  }
+  .btn_modoDruida:hover {
+    box-shadow: 0 0 10px 0 var(--color-red) inset, 0 0 10px 4px var(--color-red);
+  }
+
+  .btn_modoLeshy {
+    border-color: var(--color-red);
+    box-shadow: 0 0 40px 40px var(--color-red) inset;
+    transition: box-shadow 0.2s ease-in-out;
+  }
+  .btn_modoLeshy:hover {
+    box-shadow: 0 0 10px 0 var(--color-red) inset, 0 0 10px 4px var(--color-red);
+  }
+
+  .btn_lab1 {
+    border-color: var(--color-red);
+    box-shadow: 0 0 40px 40px var(--color-red) inset;
+    transition: box-shadow 0.2s ease-in-out;
+  }
+  .btn_lab1:hover {
+    box-shadow: 0 0 10px 0 var(--color-red) inset, 0 0 10px 4px var(--color-red);
+  }
+
+  .btn_lab2 {
+    border-color: var(--color-red);
+    box-shadow: 0 0 40px 40px var(--color-red) inset;
+    transition: box-shadow 0.2s ease-in-out;
+  }
+  .btn_lab2:hover {
+    box-shadow: 0 0 10px 0 var(--color-red) inset, 0 0 10px 4px var(--color-red);
+  }
+
+  .btn_lab3 {
+    border-color: var(--color-red);
+    box-shadow: 0 0 40px 40px var(--color-red) inset;
+    transition: box-shadow 0.2s ease-in-out;
+  }
+  .btn_lab3:hover {
+    box-shadow: 0 0 10px 0 var(--color-red) inset, 0 0 10px 4px var(--color-red);
+  }
+
+  .btn_salirMenu {
+    border-color: var(--color-red);
+    box-shadow: 0 0 40px 40px var(--color-red) inset;
+    transition: box-shadow 0.2s ease-in-out;
+  }
+  .btn_salirMenu:hover {
+    box-shadow: 0 0 10px 0 var(--color-red) inset, 0 0 10px 4px var(--color-red);
+  }
+
+  .btn_jugar {
+    border-color: var(--color-red);
+    box-shadow: 0 0 40px 40px var(--color-red) inset;
+    transition: box-shadow 0.2s ease-in-out;
+  }
+  .btn_jugar:hover {
+    box-shadow: 0 0 10px 0 var(--color-red) inset, 0 0 10px 4px var(--color-red);
+  }
+
+  .btn_volyes{
+    border-color: var(--color-red);
+    box-shadow: 0 0 40px 40px var(--color-red) inset;
+    transition: box-shadow 0.2s ease-in-out;
+  }
+
+  .btn_volyes:hover{
+    box-shadow: 0 0 10px 0 var(--color-red) inset, 0 0 10px 4px var(--color-red);
+  }
+
+  .btn_volno{
+    border-color: var(--color-red);
+    box-shadow: 0 0 40px 40px var(--color-red) inset;
+    transition: box-shadow 0.2s ease-in-out;
+  }
+
+  .btn_volno:hover{
+    box-shadow: 0 0 10px 0 var(--color-red) inset, 0 0 10px 4px var(--color-red);
+  }
+
+  

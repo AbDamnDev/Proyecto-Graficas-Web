@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="stylesheet" href="CSS/styleconfigModes.css">
+     <script type="text/javascript" src="JS/libs/jquery-3.6.0.min.js"></script>
+	<title>Modos de juego</title>
+</head>
+<body>
+
+    <video  onloadedmetadata ="this.muted=true" autoplay loop>
+		<source src="gameAssets/video/backs.mp4">
+	</video>
+
+<div style="top:20%;
+	left: 15%;
+	position: absolute;
+	transform: translate(-50%, -50%);">
+	 <h1 style="color: white;">MODO</h1>
+</div>
+<div class="rightsec" style="top:38%;
+        left: 15%;
+        position: absolute;
+        transform: translate(-50%, -50%);">
+        <div class="input_table">
+            <center><button  class="btn_modoSolitario" id="ID_SOLO">Solitario</button></center>
+			<br>
+            <center><button  class="btn_modoMultijugador" id="ID_MULTI">Multijugador</button></center>
+        </div>		
+</div>
+
+<div style="top:20%;
+	left: 35%;
+	position: absolute;
+	transform: translate(-50%, -50%);">
+	 <h1 style="color: white;">PERSONAJE</h1>
+</div>
+<div class="personajeBorde" style="top:38%;
+        left: 35%;
+        position: absolute;
+        transform: translate(-50%, -50%);">
+        <div class="input_table">
+            <center><button class="btn_modoDruida" id="ID_DRUIDA">Druida</button></center>
+			<br>
+            <center><button  class="btn_modoLeshy" id="ID_LESHY">Leshy</button></center>
+        </div>		
+</div>
+
+<div style="top:20%;
+	left: 54.5%;
+	position: absolute;
+	transform: translate(-50%, -50%);">
+	 <h1 style="color: white;">LABERINTO</h1>
+</div>
+<div class="laberintoBorde" style="top:45.5%;
+        left: 54.5%;
+        position: absolute;
+        transform: translate(-50%, -50%);">
+        <div class="input_table">
+            <center><button  class="btn_lab1" id="ID_LAB1">LAB1</button></center>
+			<br>
+            <center><button  class="btn_lab2" id="ID_LAB2">LAB2</button></center>
+			<br>
+            <center><button  class="btn_lab3" id="ID_LAB3">LAB3</button></center>
+        </div>		
+</div>
+
+<div style="top:65%;
+	left: 15%;
+	position: absolute;
+	transform: translate(-50%, -50%);">
+	 <h1 style="color: white;">GRAFICAS</h1>
+</div>
+<div class="graficasBorde" style="top:65%;
+        left: 27%;
+        position: absolute;
+        transform: translate(-50%, -50%);">
+        <div class="input_table" >
+            <form> 
+            <select name="Graficas">
+                <option class="btn_grafBajo" id="ID_GRAFICASBajo">Bajo</option>
+                <option value="Medio" id="ID_GRAFICASMedio">Medio</option>
+                <option value="HD" id="ID_GRAFICASHD">HD</option>
+            </select>
+        </form> 
+        </div>		
+</div>
+
+<div style="top:20%;
+	left: 74%;
+	position: absolute;
+	transform: translate(-50%, -50%);">
+	 <h1 style="color: white;">VOLUMEN</h1>
+</div>
+<div class="volumenBorde" style="top:38%;
+        left: 74%;
+        position: absolute;
+        transform: translate(-50%, -50%);">
+        <div class="input_table">
+            <center><button  class="btn_volyes" id="ID_VOLUMENYES">SI</button></center>
+			<br>
+            <center><button  class="btn_volno" id="ID_VOLUMENNO">NO</button></center>
+        </div>		
+</div>
+
+<div style="top:85%;
+        left: 55%;
+        position: absolute;
+        transform: translate(-50%, -50%);">
+        <div class="input_table">
+            <button onclick="window.location = 'index.html'" class="btn_salirMenu">Salir al menu</button>
+        </div>		
+</div>
+
+<div style="top:85%;
+        left: 75%;
+        position: absolute;
+        transform: translate(-50%, -50%);">
+        <div class="input_table">
+            <button onclick="continueGame()" class="btn_jugar">Jugar</button>
+        </div>		
+</div>
+
+<form id="playerName" style="top:8%;
+left: 80%;
+position: absolute;
+transform: translate(-50%, -50%);">
+    <label for="id_NameUsuariolbl">Jugador:</label>
+    <input id="id_NameUsuario" type="text" name="nombreUsuario"  maxlength="25">
+</form>
+
+
+<script>
+//1. MODO JUEGO
+//MODO SOLITARIO
+//MODO MULTIJUGADOR
+//2. PERSONAJE
+//DRUIDA
+//LESHY
+//3. LABERINTOS
+//LAB 1
+//LAB 2
+//LAB 3
+//GRAFICAS
+//VOLUMEN
+//SONIDO
+
+$(document).ready(function (){
+    $('#ID_SOLO').click( function (){
+        var ModoDeJuego = $('#ID_SOLO').text();
+        if($('#id_NameUsuariolbl2').length &&$('#id_NameUsuario2').length){
+            $('#id_NameUsuariolbl2').remove();
+            $('#id_NameUsuario2').remove();
+           
+        }
+        localStorage.setItem("gameMode", ModoDeJuego);
+    }); 
+    $('#ID_MULTI').click( function (){
+        var ModoDeJuego = $('#ID_MULTI').text();
+        if ($('#id_NameUsuariolbl2').length==0 && $('#id_NameUsuario2').length==0){
+            str='<label id="id_NameUsuariolbl2">Jugador 2:</label><input id="id_NameUsuario2" type="text" name="nombreUsuario" maxlength="25">';
+            $("#playerName").append(str);
+        }
+        localStorage.setItem("gameMode", ModoDeJuego);
+    }); 
+
+    $('#ID_DRUIDA').click( function (){
+        var ModoDeJuego = $('#ID_DRUIDA').text();
+        localStorage.setItem("typeOfPlayer", ModoDeJuego);
+    });     
+    $('#ID_LESHY').click( function (){
+        var ModoDeJuego = $('#ID_LESHY').text();
+        localStorage.setItem("typeOfPlayer", ModoDeJuego);
+    });    
+    $('#ID_LAB1').click( function (){
+        var ModoDeJuego = $('#ID_LAB1').text();
+        localStorage.setItem("gameScene", 1);
+    });    
+
+    $('#ID_LAB2').click( function (){
+        var ModoDeJuego = $('#ID_LAB2').text();
+        localStorage.setItem("gameScene", 2);
+    });  
+
+    $('#ID_LAB3').click( function (){
+        var ModoDeJuego = $('#ID_LAB3').text();
+        localStorage.setItem("gameScene", 3);
+    });    
+
+    $('#ID_GRAFICASBajo').click( function (){
+        var graficasJuego = $('#ID_GRAFICASBajo').text();
+        localStorage.setItem("graphicsConfig", graficasJuego);
+    });   
+
+    $('#ID_VOLUMENYES').click( function (){
+        var volOpt = $('#ID_VOLUMENYES').text();
+        localStorage.setItem("soundEnable", volOpt);
+    });     
+    $('#ID_VOLUMENNO').click( function (){
+        var volOpt = $('#ID_VOLUMENNO').text();
+        localStorage.setItem("soundEnable", volOpt);
+    });    
+});
+
+
+
+function continueGame(){
+    if(localStorage.length>0 && $('#id_NameUsuario').val()!=""){
+        let playerConfig={
+            typeOfPlayer: localStorage.getItem('typeOfPlayer'), //niño o monstruo
+            gameScene: localStorage.getItem('gameScene'), //escenario 1, 2 o 3
+            gameMode: localStorage.getItem('gameMode'), // single or multiplayer
+            nameofPlayer1: $('#id_NameUsuario').val(),
+            nameofPlayer2: null,
+            gameDifficulty:localStorage.getItem('gameScene'),
+        }
+        
+        if (playerConfig.gameMode=="Multijugador"){
+            playerConfig.nameofPlayer2=$('#id_NameUsuario2').val();
+        }
+        if(!(playerConfig.nameofPlayer2!= null && playerConfig.nameofPlayer2=="")){
+            var formData = new FormData();
+            //insertNewPlayer
+            formData.append('accion','insertNewPlayer');
+            formData.append('username',playerConfig.nameofPlayer1);
+            formData.append('username2',playerConfig.nameofPlayer2);
+            formData.append('typePlayer',playerConfig.typeOfPlayer);
+            formData.append('scene',playerConfig.gameScene);
+            formData.append('gameMode',playerConfig.gameMode);
+            formData.append('gameDifficulty',playerConfig.gameDifficulty);
+            formData.append('username2',playerConfig.nameofPlayer2);
+            //const dataString= JSON.stringify(data);
+            $.ajax({
+                async: false,
+                url     : "./php/service_include.php",
+                method  : "POST",
+                data    : formData,
+                contentType:false,
+                cache:false,
+                processData: false
+            }).done(function (data, textEstado, jqXHR){
+                data=$.parseJSON(data);
+            if(data.result=="true"){
+                localStorage.setItem('idPlayer1',data.ids[0]);
+                if(data.playerNumber==2){
+                    localStorage.setItem('idPlayer2',data.ids[1]);
+                }
+                window.location='gamePage.html';
+            }else{
+                alert("No se pudo insertar el jugador");
+            }
+            }).fail(function (data, textEstado, jqXHR){
+                alert("la solicitud fallos porque: " + textEstado);
+                console.log("la solicitud fallos porque: " + textEstado);
+                alert("No se pudo insertar el jugador");
+            });
+        }else{
+            alert("No se pudo insertar el jugador"); 
+        }
+       
+    }else{
+        alert("No se pudo insertar el jugador");
+    }
+    
+}
+
+async function  handlerResponse(res){
+    try{
+        const content=await res.text();
+        const jsonData = JSON.parse(content);
+        return jsonData;
+    }catch(e){
+        alert(content);
+        return {result:false};
+    }
+}
+</script>    
+
+</body>
+</html>

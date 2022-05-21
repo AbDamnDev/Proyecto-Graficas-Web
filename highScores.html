@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="stylesheet" href="CSS/stylePuntuaciones.css">
+	<title>Puntuaciones más altas</title>
+</head>
+<body>
+
+	<video onloadedmetadata ="this.muted=true" autoplay loop>
+		<source src="gameAssets/video/backs.mp4">
+	</video>
+
+	<div style="top:20%;
+	left: 50%;
+	position: absolute;
+	transform: translate(-50%, -50%);">
+	 <h1 style="color: black;">Puntuaciones</h1>
+	</div>
+
+	<div style="top:58%;
+        left: 50%;
+        position: absolute;
+        transform: translate(-50%, -50%);">
+	<div >
+		<button onclick="window.location = 'index.html'"  class="btn_puntuacionesSalirMenu">Salir al menu</button>
+		<ol>
+
+			<li class="dt_usuario"> </li>
+			
+			<li>  </li>
+			
+			<li>  </li>
+			
+			</ol>
+	</div>
+<script>
+	$(document).on("ready", function(){
+
+	});
+
+	var lista = function(){
+		var table = $("#dt_usuario").DataTable({
+			"ajax":{
+				"method":"POST",
+				"url":"lista.php"
+			},
+			"columns":[
+				{"data":"id"},
+				{"data":"puntuacion"},
+				{"data":"nombreUsuario"},
+			]
+		});
+	}
+</script>
+
+</body>
+</html>
