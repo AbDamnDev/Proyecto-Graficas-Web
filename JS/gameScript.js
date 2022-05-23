@@ -4,10 +4,10 @@ import { Water } from 'https://cdn.jsdelivr.net/npm/three@0.117.1/examples/jsm/o
 import { Sky } from 'https://cdn.jsdelivr.net/npm/three@0.117.1/examples/jsm/objects/Sky.js';
 import {FBXLoader} from 'https://cdn.jsdelivr.net/npm/three@0.117.1/examples/jsm/loaders/FBXLoader.js';
 import {SubdivisionModifier} from 'https://cdn.jsdelivr.net/npm/three@0.117.1/examples/jsm/modifiers/SubdivisionModifier.js';
-import * as LSManager from '../JS/localStorageManager.js';
+import * as LSManager from './localStorageManager.js';
 
-
-
+var itemsPosition= new Array();
+var keyNumber=4;
 //global variables
 var scene;
 var camera;
@@ -15,14 +15,31 @@ var camera;
 var escenaro1=false;
 var escenaro2=false;
 var escenaro3=true;
-
 var itemsCollectable=[];
+//Variabel pausa
+var isPaused = false;
 
 //estas variables son para multijugador local
 var cameras=[];
 var renderers=[];
 var players=[];
 //
+
+//variables enemigos
+var pos_a=1;
+var pos_b=1;
+var pos_c=1;
+var pos_d=1;
+
+var pos1_a=1;
+var pos1_b=1;
+var pos1_c=1;
+var pos1_d=1;
+var pos1_e=1;
+var pos1_f=1;
+var pos1_g=1;
+
+
 var loader; //variable que sirve como cargador FBX
 var renderer;
 var clock;
@@ -47,8 +64,9 @@ var windowHalfY = window.innerHeight / 2;
 const player={
     death: false,
     victory: false,
+	timer: 0,
     nameplayer: null,
-    typeplyer:"druida",
+    typeplyer:"Druida",
     mixer: null, //objeto de threejs que permite manejar animaciones
     handler: null, //valor que permite manejar la rotacion, animacion, etc
     yaw:null,
@@ -80,8 +98,9 @@ const player={
 const player2={
 	death: false,
     victory: false,
+	timer: 0,
     nameplayer: null,
-    typeplyer:"druida",
+    typeplyer:"Druida",
     mixer: null, //objeto de threejs que permite manejar animaciones
     handler: null, //valor que permite manejar la rotacion, animacion, etc
     yaw:null,
@@ -268,31 +287,42 @@ void main()
     gl_FragColor = vec4( glow, 1.0 );
 }`;
 
-
-
-
-
+function localStorageGetInfo(){
+	if(localStorage.length>0){
+		//typeOfPlayer,gameScene,gameMode,namePlayer1,namePlayer2,idPlayer1,idPlayer2
+		localStorageInfo={
+			typeOfPlayer: localStorage.getItem('typeOfPlayer'), //niño o monstruo
+            gameScene: localStorage.getItem('gameScene'), //escenario 1, 2 o 3
+            gameMode: localStorage.getItem('gameMode'), // single or multiplayer
+			playerNum:localStorage.getItem('playerNum'),
+			idplayer1:localStorage.getItem('idPlayer1'),
+            nameofPlayer1: localStorage.getItem('namePlayer1'),
+			idplayer2: null,
+            nameofPlayer2: null,
+            gameDifficulty:localStorage.getItem('gameScene'),
+		}
+		if(localStorageInfo.gameMode=="Multijugador"){
+			localStorageInfo.idplayer2=localStorage.getItem('idPlayer2');
+			localStorageInfo.nameofPlayer2=localStorage.getItem('namePlayer2');
+		}
+	}
+}
 
 //inicializamos las variables globales, luego las metemos a una funcion
-function SetUpScene(gamemode){ //set para un solo jugador
+function SetUpScene(){ //set para un solo jugador
+	localStorageGetInfo();
 	scene=new THREE.Scene(); //crea la escena
 	clock= new THREE.Clock();
 	loader=new FBXLoader();
 	listener = new THREE.AudioListener(); //cargador de audio
-	/*const monsterSound = new THREE.Audio(listener); //añadir sonido de monstruos/ruido de fondo
-	const runningChild = new THREE.Audio(listener);
-	const gameOverSound = new THREE.Audio(listener); //añadir sonido de derrota
-	const victorySound = new THREE.Audio(listener); //añadir sonido de victoria*/
-	//const sky = buildSky();
-	//const sun = buildSun();
 	const water = buildWater();
 
 
 	scene.add(ambientLight);
 
 	{										//agregamos niebla
-		const near = 10;
-		const far = 200;
+		const near = 6;
+		const far = 100;
 		const color = 'lightblue';
 		scene.fog = new THREE.Fog(color, near, far);
 		scene.background = new THREE.Color(color);
@@ -300,7 +330,7 @@ function SetUpScene(gamemode){ //set para un solo jugador
 
 	directionalLight.position.set(0, 0, 1);
 	scene.add(directionalLight);
-		if(gamemode=="single"){
+		if(localStorageInfo.gameMode=="Solitario"){
 		
 			camera= new THREE.PerspectiveCamera(45,window.innerWidth / window.innerHeight,0.1, 1000);
 			
@@ -316,7 +346,7 @@ function SetUpScene(gamemode){ //set para un solo jugador
 			//añadirlo al html
 			document.body.appendChild(renderer.domElement); //indica que el canvas en html es nuestro lienzo donde renderizamos
 
-		}else if (gamemode=="multiplayerLocal"){
+		}else if (localStorageInfo.gameMode=="Multijugador"){
 			createCamera();
 			createCamera(); //almacenadas en cameras[0] y cameras[1]
 
@@ -371,19 +401,6 @@ function createRenderer(color) {
 
 	renderers.push(renderer);
 }
-
-
-
-//sacamos la informacion del Local Storage
-
-//localStorageInfo=LSManager.leer();
-//del local storage obtenemos: Tipo de jugador, tipo de escenario, nombre del jugador
-//añadimos cosas del jugador de ser necesarias
-
-//guardamos de nuevo en el local storage, ya actualizado, y lo volveremos a hacer al terminar el juego
-//LSManager.guardar(localStorageInfo);
-//al acabar el juego y guardar en la base de datos, ejecutamos la eliminacion del local storage
-//LSManager.eliminar();
 
 function loadOBJWithMTL(path, objFile, mtlFile, _onLoadCallback) {
 		
@@ -460,8 +477,6 @@ function onStartFloor(bumpmap,blendmap,basemap,redmap,greenmap,bluemap,heightPos
     });
 }
 
-
-
 function onStartSkybox(_path, skyarray) {
     const ctLoader = new THREE.CubeTextureLoader();
     ctLoader.setPath( 'gameAssets/terrainTextures/sky/' ); //necesitamos el path de la carpeta donde se encuentran todas
@@ -471,6 +486,8 @@ function onStartSkybox(_path, skyarray) {
         loadedAssets++;
     });
 }
+
+
 function setItemsOnGame(){
 	//en esta funcion vamos a cargar todos los modelos del escenario, el jugador y enemigos se cargan en otra
 	//ademas ocupamos información del local storage para saber que escenario cargar
@@ -479,19 +496,105 @@ function setItemsOnGame(){
 			light.position.set( 0, 0, 20 );
 			light.castShadow = true; // default false
 		//	scene.add( light );
-
-		loadSpecialItems(4);
-
-
+		if(localStorageInfo.gameMode=="Solitario"){
+			switch(localStorageInfo.gameScene){
+				case 1:{
+					
+					loadSpecialItems(1);
+					keyNumber=1;
+					escenaro1=true;
+					escenaro2=false;
+					escenaro3=false;
+					break;
+				}
+				case 2:{
+					loadSpecialItems(2);
+					keyNumber=2;
+					escenaro1=false;
+					escenaro2=true;
+					escenaro3=false;
+					break;
+				}
+				case 3:{
+					loadSpecialItems(4);
+					keyNumber=4;
+					escenaro1=false;
+					escenaro2=false;
+					escenaro3=true;
+					break;
+				}
+	
+			}
+		}else{
+			loadSpecialItems(1);
+			keyNumber=1;
+			escenaro1=false;
+			escenaro2=true;
+			escenaro3=false;
+		}
+		
 //ESCENARIO1//
 	var escalaEscenario1=.01;
 	var posicionEscenario1Y=18.25;
 	var posicionEscenario1X=0;
 	var posicionEscenario1Z=-8;
-
+	var Enemigoescala=.1
 
 if (escenaro1)
 {
+	var geometryCube = new THREE.BoxGeometry(2,2,2);
+	var materialCube = new THREE.MeshBasicMaterial({color:0x00aaff});
+	var cube1 = new THREE.Mesh(geometryCube,materialCube);
+	materialCube.transparent=true;
+	materialCube.opacity=0;
+	cube1.name="C1";
+	cube1.position.set(-6,17.5,-24);
+	scene.add(cube1)
+
+	var cube2 = new THREE.Mesh(geometryCube,materialCube);
+	cube2.name="C2";
+	cube2.position.set(6,17.5,-24);
+	scene.add(cube2)
+
+	var cube3 = new THREE.Mesh(geometryCube,materialCube);
+	cube3.name="C3";
+	cube3.position.set(6,17.5,6);
+	scene.add(cube3)
+
+	var cube4 = new THREE.Mesh(geometryCube,materialCube);
+	cube4.name="C4";
+	cube4.position.set(4,17.5,-18);
+	scene.add(cube4)
+
+	
+
+	loader.load('gameAssets/3dModels/wendigo/wendigo.fbx',(model)=>{
+		model.name="E1_ENE1";
+		model.scale.multiplyScalar(Enemigoescala);
+		model.position.set(0,0,0);
+		cube1.add(model);
+	});
+	loader.load('gameAssets/3dModels/wendigo/wendigo.fbx',(model)=>{
+		model.name="E1_ENE2";
+		model.scale.multiplyScalar(Enemigoescala);
+		model.position.set(0,0,0);
+		cube2.add(model);
+	});
+	loader.load('gameAssets/3dModels/wendigo/wendigo.fbx',(model)=>{
+		model.name="E1_ENE3";
+		model.scale.multiplyScalar(Enemigoescala);
+		model.position.set(0,0,0);
+		cube3.add(model);
+	});
+	loader.load('gameAssets/3dModels/wendigo/wendigo.fbx',(model)=>{
+		model.name="E1_ENE4";
+		model.scale.multiplyScalar(Enemigoescala);
+		model.position.set(0,0,0);
+		cube4.add(model);
+	});
+
+
+
 			loader.load('gameAssets/3dModels/nivel1/nivel1Suelo.fbx',(model)=>{
 				model.name="Suelo1";
 				model.scale.multiplyScalar(escalaEscenario1);
@@ -684,6 +787,98 @@ var posicionEscenario2Z=-23;
 
 if (escenaro2)
 {
+	if(localStorageInfo.typeOfPlayer=="Druida"){
+		var geometryCube = new THREE.BoxGeometry(2,2,2);
+		var materialCube = new THREE.MeshBasicMaterial({color:0x000000});
+		materialCube.transparent=true;
+		materialCube.opacity=.21;
+		var cubeb1 = new THREE.Mesh(geometryCube,materialCube);
+		cubeb1.name="CB1";
+		cubeb1.position.set(-25.5,17.5,2);
+		scene.add(cubeb1)
+
+		var cubeb2 = new THREE.Mesh(geometryCube,materialCube);
+		cubeb2.name="CB2";
+		cubeb2.position.set(22.5,17.5,-48);
+		scene.add(cubeb2)
+
+		var cubeb3 = new THREE.Mesh(geometryCube,materialCube);
+		cubeb3.name="CB3";
+		cubeb3.position.set(22.5,17.5,2.5);
+		scene.add(cubeb3)
+
+
+		var cubeb4 = new THREE.Mesh(geometryCube,materialCube);
+		cubeb4.name="CB4";
+		cubeb4.position.set(4.5,17.5,0);
+		scene.add(cubeb4)
+
+		var cubeb5 = new THREE.Mesh(geometryCube,materialCube);
+		cubeb5.name="CB5";
+		cubeb5.position.set(-7,17.5,-15);
+		scene.add(cubeb5)
+
+
+		var cubeb6 = new THREE.Mesh(geometryCube,materialCube);
+		cubeb6.name="CB6";
+		cubeb6.position.set(-13.5,17.5,-46);
+		scene.add(cubeb6)
+
+
+		var cubeb7 = new THREE.Mesh(geometryCube,materialCube);
+		cubeb7.name="CB7";
+		cubeb7.position.set(-2,17.5,-33.5);
+		scene.add(cubeb7)
+
+
+
+
+		loader.load('gameAssets/3dModels/wendigo/wendigo.fbx',(model)=>{
+			model.name="E2_ENE1";
+			model.scale.multiplyScalar(Enemigoescala);
+			model.position.set(0,0,0);
+			cubeb1.add(model);
+		});
+		loader.load('gameAssets/3dModels/wendigo/wendigo.fbx',(model)=>{
+			model.name="E2_ENE2";
+			model.scale.multiplyScalar(Enemigoescala);
+			model.position.set(0,0,0);
+			cubeb2.add(model);
+		});
+		loader.load('gameAssets/3dModels/wendigo/wendigo.fbx',(model)=>{
+			model.name="E2_ENE3";
+			model.scale.multiplyScalar(Enemigoescala);
+			model.position.set(0,0,0);
+			cubeb3.add(model);
+		});
+		loader.load('gameAssets/3dModels/wendigo/wendigo.fbx',(model)=>{
+			model.name="E2_ENE4";
+			model.scale.multiplyScalar(Enemigoescala);
+			model.position.set(0,0,0);
+			cubeb4.add(model);
+		});
+		loader.load('gameAssets/3dModels/wendigo/wendigo.fbx',(model)=>{
+			model.name="E2_ENE5";
+			model.scale.multiplyScalar(Enemigoescala);
+			model.position.set(0,0,0);
+			cubeb5.add(model);
+		});
+		loader.load('gameAssets/3dModels/wendigo/wendigo.fbx',(model)=>{
+			model.name="E2_ENE6";
+			model.scale.multiplyScalar(Enemigoescala);
+			model.position.set(0,0,0);
+			cubeb6.add(model);
+		});
+		loader.load('gameAssets/3dModels/wendigo/wendigo.fbx',(model)=>{
+			model.name="E2_ENE7";
+			model.scale.multiplyScalar(Enemigoescala);
+			model.position.set(0,0,0);
+			cubeb7.add(model);
+		});
+	}
+	
+
+
 loader.load('gameAssets/3dModels/nivel2/N2Escenario.fbx',(model)=>{
 	model.name="Escenario";
 	model.scale.multiplyScalar(escalaEscenario2);
@@ -932,6 +1127,35 @@ var posicionEscenario3Z=-40;
 
 if (escenaro3)
 {
+	var geometryCube = new THREE.BoxGeometry(2,2,2);
+	var geometryCube2 = new THREE.BoxGeometry(100,2,7);
+
+	var materialCube = new THREE.MeshBasicMaterial({color:0xffffff});
+	materialCube.transparent=true;
+	materialCube.opacity=.2;
+	var cubec1 = new THREE.Mesh(geometryCube,materialCube);
+	cubec1.name="CC1";
+	cubec1.position.set(0,17.5,-38);
+	scene.add(cubec1)
+
+	var cubec2 = new THREE.Mesh(geometryCube2,materialCube);
+	cubec2.name="CC2";
+	cubec2.position.set(0,0,0);
+	cubec2.rotation.y=2 * Math.PI * (45 / 360);
+
+	cubec1.add(cubec2)
+
+	var cubec3 = new THREE.Mesh(geometryCube2,materialCube);
+	cubec3.name="CC3";
+	cubec3.position.set(0,0,0);
+	cubec3.rotation.y=2 * Math.PI * (135 / 360);
+	cubec1.add(cubec3)
+
+
+
+
+
+
 	loader.load('gameAssets/3dModels/nivel3/E3_suelo.fbx',(model)=>{
 		model.name="Suelo";
 		model.scale.multiplyScalar(escalaEscenario3);
@@ -1235,44 +1459,121 @@ if (escenaro3)
 }
 
 function loadSpecialItems(keysNumber){
-	const billLoader=new THREE.TextureLoader();
-	var botasnum=Math.floor(Math.random() * (4-1))+1;
-	var ojosnum=Math.floor(Math.random() * (4-1))+1;
-	var capasnum=Math.floor(Math.random() * (4-1))+1;
-	let bootpos=new THREE.Vector3(0,18,4);
-	let bootrot=new THREE.Math.degToRad(0);
-	let bootscale=new THREE.Vector3(0.5,0.5,1);
-	var keysArray=ItemsLoaderFB(billLoader,'gameAssets/3dModels/billboards/key2.png','Key',keysNumber,bootpos,bootrot,bootscale,0xffff00);
-	//agregar arreglo para acomodar las posiciones de las llaves
+	if(escenaro1)
+	{
+		itemsPosition[0]=new THREE.Vector3(-6,17.5,6);
+		itemsPosition[1]=new THREE.Vector3(-6,17.5,-23);
+		itemsPosition[2]=new THREE.Vector3(6,17.5,-24);
+		itemsPosition[3]=new THREE.Vector3(6,17.5,6);
+		itemsPosition[4]=new THREE.Vector3(-4,17.5,-17);
+		itemsPosition[5]=new THREE.Vector3(-3,17.5,-9);
+		itemsPosition[6]=new THREE.Vector3(3,17.5,-10);
+		itemsPosition[7]=new THREE.Vector3(0,17.5,-20);
+		itemsPosition[8]=new THREE.Vector3(0,17.5,-6);
+		itemsPosition[9]=new THREE.Vector3(-3,17.5,-13);
+		itemsPosition[10]=new THREE.Vector3(0,17.5,-13);
+		itemsPosition[11]=new THREE.Vector3(-6,17.5,-20);
+		itemsPosition[12]=new THREE.Vector3(6,17.5,-20);
 
+	}
+	if(escenaro2)
+	{
+		itemsPosition[0]=new THREE.Vector3(-25.6,17.5,2.4);
+		itemsPosition[1]=new THREE.Vector3(-25,17.5,-48);
+		itemsPosition[2]=new THREE.Vector3(22.5,17.5,-48);
+		itemsPosition[3]=new THREE.Vector3(22.5,17.5,5.8);
+		itemsPosition[4]=new THREE.Vector3(4,17.5,.5);
+		itemsPosition[5]=new THREE.Vector3(4,17.5,-28);
+		itemsPosition[6]=new THREE.Vector3(-7,17.5,-15);
+		itemsPosition[7]=new THREE.Vector3(-17.5,-36);
+		itemsPosition[8]=new THREE.Vector3(-13,17.5,-46);
+		itemsPosition[9]=new THREE.Vector3(-13,17.5,-6);
+		itemsPosition[10]=new THREE.Vector3(-2,17.5,-33.5);
+		itemsPosition[11]=new THREE.Vector3(10.5,17.5,-33);
+		itemsPosition[12]=new THREE.Vector3(-19,17.5,-34);
+		itemsPosition[13]=new THREE.Vector3(22.5,17.5,-18);
+		itemsPosition[14]=new THREE.Vector3(5,17.5,-21);
+
+	}
+	if(escenaro3)
+	{
+		itemsPosition[0]=new THREE.Vector3(0,17.5,-97);
+		itemsPosition[1]=new THREE.Vector3(-58,17.5,-39.5);
+		itemsPosition[2]=new THREE.Vector3(0,17.5,17);
+		itemsPosition[3]=new THREE.Vector3(58.5,17.5,-40);
+		itemsPosition[4]=new THREE.Vector3(0,17.5,-12);
+		itemsPosition[5]=new THREE.Vector3(43.5,17.5,-53.5);
+		itemsPosition[6]=new THREE.Vector3(26,17.5,-26);
+		itemsPosition[7]=new THREE.Vector3(13,17.5,-79.5);
+		itemsPosition[8]=new THREE.Vector3(-12.8,17.5,-80);
+		itemsPosition[9]=new THREE.Vector3(0,17.5,-65.5);
+		itemsPosition[10]=new THREE.Vector3(-26,17.5,-53);
+		itemsPosition[11]=new THREE.Vector3(-57,17.5,-26);
+		itemsPosition[12]=new THREE.Vector3(-16.5,17.5,-36);
+	}
+	const billLoader=new THREE.TextureLoader();
+	if (localStorageInfo.typeOfPlayer=="Druida"){
+		var botasnum=Math.floor(Math.random() * (4-1))+1;
+		var ojosnum=Math.floor(Math.random() * (4-1))+1;
+		var capasnum=Math.floor(Math.random() * (4-1))+1;
+		let bootpos=new THREE.Vector3(0,18,4);
+		let bootrot=new THREE.Math.degToRad(0);
+		let bootscale=new THREE.Vector3(0.5,0.5,1);
+		var keysArray=ItemsLoaderFB(billLoader,'gameAssets/3dModels/billboards/key2.png','Key',keysNumber,bootpos,bootrot,bootscale,0xffff00);
+		
+		bootpos.z=bootpos.z-1;
+		var bootsArray=ItemsLoaderFB(billLoader,'gameAssets/3dModels/billboards/boots.png','Boot',botasnum,bootpos,bootrot,bootscale,0xdb483d);
+		if(bootsArray.length>0){
+			bootsArray.forEach(function (boot){
+				i=Math.floor(Math.random()*itemsPosition.length); 
+				boot.position.x=itemsPosition[i].x;
+				boot.position.z=itemsPosition[i].z;	
+				itemsPosition.splice(i,1);
+				itemsCollectable.push(boot);
+				scene.add(boot);
+			});
+		}
+		bootpos.z=bootpos.z-1;
+		var eyesArray=ItemsLoaderFB(billLoader,'gameAssets/3dModels/billboards/eye.png','Eye',ojosnum,bootpos,bootrot,bootscale,0x09adef);//0x09adef
+		if(eyesArray.length>0){
+			eyesArray.forEach(function (eye){
+				i=Math.floor(Math.random()*itemsPosition.length); 
+				eye.position.x=itemsPosition[i].x;
+				eye.position.z=itemsPosition[i].z;	
+				itemsCollectable.push(eye);
+				scene.add(eye);
+			});
+		}
+		bootpos.z=bootpos.z-1;
+		var coatArray=ItemsLoaderFB(billLoader,'gameAssets/3dModels/billboards/coat.png','Coat',capasnum,bootpos,bootrot,bootscale,0x0cdd09);//0x0cdd09
+		if(coatArray.length>0){
+			coatArray.forEach(function (coat){
+				i=Math.floor(Math.random()*itemsPosition.length); 
+				coat.position.x=itemsPosition[i].x;
+				coat.position.z=itemsPosition[i].z;
+				itemsCollectable.push(coat);
+				scene.add(coat);
+			});
+	}
+	}else{
+		let objEnemy={
+			handler: null,
+			mixer:null,
+			idle:null
+		}
+		var pos= new THREE.Vector3(0.0,17.5,5);
+		var keysArray=druidasLoader(objEnemy,keysNumber,'Key',pos);
+	}
+	var i=0;
 	if(keysArray.length>0){
 		keysArray.forEach(function (key){
+			i=Math.floor(Math.random()*itemsPosition.length); 
+			key.position.x=itemsPosition[i].x;
+			key.position.z=itemsPosition[i].z;
+
+			itemsPosition.splice(i,1);
 			itemsCollectable.push(key);
 			scene.add(key);
-		});
-	}
-	bootpos.z=bootpos.z-1;
-	var bootsArray=ItemsLoaderFB(billLoader,'gameAssets/3dModels/billboards/boots.png','Boot',botasnum,bootpos,bootrot,bootscale,0xdb483d);
-	if(bootsArray.length>0){
-		bootsArray.forEach(function (boot){
-			itemsCollectable.push(boot);
-			scene.add(boot);
-		});
-	}
-	bootpos.z=bootpos.z-1;
-	var eyesArray=ItemsLoaderFB(billLoader,'gameAssets/3dModels/billboards/eye.png','Eye',ojosnum,bootpos,bootrot,bootscale,0x09adef);//0x09adef
-	if(eyesArray.length>0){
-		eyesArray.forEach(function (eye){
-			itemsCollectable.push(eye);
-			scene.add(eye);
-		});
-	}
-	bootpos.z=bootpos.z-1;
-	var coatArray=ItemsLoaderFB(billLoader,'gameAssets/3dModels/billboards/coat.png','Coat',capasnum,bootpos,bootrot,bootscale,0x0cdd09);//0x0cdd09
-	if(coatArray.length>0){
-		coatArray.forEach(function (coat){
-			itemsCollectable.push(coat);
-			scene.add(coat);
 		});
 	}
 
@@ -1334,10 +1635,37 @@ function ItemsLoaderFB(loader,path,baseName,itemsNumber,basePosition,baseRotatio
 	}
 	return itemArray;
 }
+function druidasLoader(player,itemsNumber,baseName,basePosition){
+	var itemArray=new Array();
+	loader.load('gameAssets/3dModels/druida/Druida.fbx',(model)=>{
+		model.scale.multiplyScalar(0.09);
+		model.rotation.y=THREE.Math.degToRad(-180); 
+		player.handler=model;
+		player.mixer=new THREE.AnimationMixer(player.handler);
 
+		loader.load('gameAssets/3dModels/druida/animations/Druida@Idle.fbx',(animacion1)=>{
+			const idleanimation=animacion1.animations[0];
+			player.idle=player.mixer.clipAction(idleanimation);
+			player.idle.play(); //reproducir animacion
+			loadedAssets++;
+		});
+		model.name=baseName;
+		model.position.set(basePosition.x,basePosition.y,basePosition.z);
+		itemArray.push(model);
+		if (itemsNumber>1){
+			for(let i=1;i<itemsNumber;i++){
+				var itemX= model.clone();
+				itemX.name=baseName+i;
+				itemX.position.x=itemX.position.x+i;
+				itemArray.push(itemX); //<-------
+			}
+		}
+	});
+	return itemArray;
+}
 
 function completeLoadPlayer(type, nombre, posicion,player){
-	if(type=="druida"){
+	if(type=="Druida"){
 		loader.load('gameAssets/3dModels/druida/Druida.fbx',(model)=>{
 			model.scale.multiplyScalar(0.09);
 			model.rotation.y=THREE.Math.degToRad(-180); 
@@ -1384,7 +1712,7 @@ function completeLoadPlayer(type, nombre, posicion,player){
 
 		});
 			
-	}else if (type=="wendigo"){
+	}else if (type=="Leshy"){
 		loader.load('gameAssets/3dModels/wendigo/wendigo.fbx',(model)=>{
 			model.scale.multiplyScalar(0.2);
 			player.handler=model;
@@ -1426,7 +1754,7 @@ function completeLoadPlayer(type, nombre, posicion,player){
 		});
 
 	}
-			
+		
 }
 function loadPlayerS(playernumber,playertype){
 	if(playernumber==1){ //si solo es un jugador
@@ -1602,13 +1930,13 @@ function onStartEnemies(){
 }
 
 function onStart(){
-	SetUpScene("single");
+	SetUpScene();
 	onStartSkybox('gameAssets/terrainTextures/sky/',[ 'px.jpg', 'nx.jpg','py.jpg', 'ny.jpg','pz.jpg', 'nz.jpg']);
 	onStartFloor('gameAssets/terrainTextures/terrain/altura3.jpg','gameAssets/terrainTextures/terrain/blendMap1.jpg',
 	'gameAssets/terrainTextures/terrain/soil.jpg','gameAssets/terrainTextures/terrain/Piedras.jpg',	
 	'gameAssets/terrainTextures/terrain/piso.jpg','gameAssets/terrainTextures/terrain/moss.jpg',-130);
 	setItemsOnGame();
-	loadPlayerS(1,"druida");
+	loadPlayerS(localStorageInfo.playerNum,localStorageInfo.typeOfPlayer);
 	onStartEnemies();
 	onStartAudio();
 	onStartParticles();
@@ -1642,11 +1970,10 @@ function calculateLookat(cube){
 }
 function killPlayer(player){
     childDeath.play();
-    player.death=true;
+    player.death=true; //a lo mejor esta condicion es para ejecutar el killplayer
     player.mixer.stopAllAction();
 
     player.actions.death.play();
-
 }
 function getItem(colArray,player){
 	let itemName =new String();
@@ -1741,15 +2068,18 @@ function getInvisibility(deltaTime, player){
 let lastState='idle';
 let lastState2='idle';
 function onUpdateSinglePlayer(deltaTime){
-	 player.mixer.update(deltaTime); //para hacer el update de la animacion necesita un deltatime
+	 player.mixer.update(deltaTime); //para hacer el update de la animacion necesita un deltatime Hay que revisas, marca error 
+	
     if (!player.death){
+		player.timer+=deltaTime;
         let state='idle';
 		player.forward=getSpeed(deltaTime,player);
 		getInvisibility(deltaTime,player);
         if(keys['W']){
-        	//player.forward=10;
+        	//player.forward=10;  Hay que revisar deberia funcionar
         	player.handler.translateZ(player.forward * deltaTime);
-            
+			console.log("VColision Antes: "+player.forward * deltaTime);
+
             state='walking';
         }
         if(keys['S']){
@@ -1765,43 +2095,49 @@ function onUpdateSinglePlayer(deltaTime){
         }if(keys['D']){
         	player.yaw=-5;
         	player.handler.rotation.y += player.yaw * deltaTime;
-        }if (keys['Z']){
-        	//ACTIVAR BOTAS desactivo todo lo demás
-        	if(player.pBoot.num>0){
-        		if(player.pBoot.active==false){
-        			//powerUp.play();
-        			player.pBoot.active=true;
-		        	player.pEye.active=false;
-		        	player.pCoat.active=false;
-        		}else{
-        			player.pBoot.active=false;
-        		}
-        	}
-        	
-        }if (keys['X']){
-        	//ACTIVAR CAPA
-	        	if(player.pCoat.num>0){
-	        		if(player.pCoat.active==false){
-	        			//powerUp.play();
-			        	player.pCoat.active=true;
-			        	player.pBoot.active=false;
-			        	player.pEye.active=false;
-			        }else{
-			        	player.pCoat.active=false;
-			        }
-        	}
-        }if (keys['C']){
-        	//ACTIVAR OJO
-        	if(player.pEye.num>0){
-        		if(player.pEye.active==false){
-        			//powerUp.play();
-		        	player.pEye.active=true;
-		        	player.pBoot.active=false;
-		        	player.pCoat.active=false;
-	        	}else{
-	        		player.pEye.active=false;
-	        	}
-        	}
+        }
+		if(player.typeplyer=="Druida"){
+			if (keys['Z']){
+				//ACTIVAR BOTAS desactivo todo lo demás
+				if(player.pBoot.num>0){
+					if(player.pBoot.active==false){
+						//powerUp.play();
+						player.pBoot.active=true;
+						player.pEye.active=false;
+						player.pCoat.active=false;
+					}else{
+						player.pBoot.active=false;
+					}
+				}
+				
+			}if (keys['X']){
+				//ACTIVAR CAPA
+					if(player.pCoat.num>0){
+						if(player.pCoat.active==false){
+							//powerUp.play();
+							player.pCoat.active=true;
+							player.pBoot.active=false;
+							player.pEye.active=false;
+						}else{
+							player.pCoat.active=false;
+						}
+				}
+			}if (keys['C']){
+				//ACTIVAR OJO
+				if(player.pEye.num>0){
+					if(player.pEye.active==false){
+						//powerUp.play();
+						player.pEye.active=true;
+						player.pBoot.active=false;
+						player.pCoat.active=false;
+					}else{
+						player.pEye.active=false;
+					}
+				}
+			}
+		}
+		if (keys['P']){
+			isPaused=true;
         }
 
 
@@ -1822,15 +2158,21 @@ function onUpdateSinglePlayer(deltaTime){
             const crossFadeTime=0.2; //tiempo de transicion en seg
             lastAnimation.crossFadeTo(newAnimation,crossFadeTime).play(); //para realizar la transicion suave
             lastState=state;
-			if(player.typeplyer=="druida"){
+			if(player.typeplyer=="Druida"){
 				runningChild.play();
+			}else{
+				monsterSound.play();
 			}
 			
         }else{
         	if(state!="walking"){
-				if(player.typeplyer=="druida"){
+				if(player.typeplyer=="Druida"){
 					if(runningChild.isPlaying){
 						runningChild.stop();
+					}
+				}else{
+					if(monsterSound.isPlaying){
+						monsterSound.stop();
 					}
 				}
         		
@@ -1838,47 +2180,94 @@ function onUpdateSinglePlayer(deltaTime){
         	
         }
 		if(loadedAssets>10){
-			//var rayo=player.rayo;
-			//var point=new THREE.Vector2(0,300);
-			//raycaster.setFromCamera(point,camera);
+			
 			raycaster.set(player.handler.position, player.rayo);
 			var colision=raycaster.intersectObjects(itemsCollectable,true);
 
 			if(colision.length>0 &&colision[0].distance<=1 ){
-
-				//alert("si hay colision con el objeto: "+ colision[0].object.parent.name);
-				//si choca, que la camera no se pueda mover
 				getItem(colision,player);
 				colision=null;
 			}
 		}
-		/*if(player.handler.position.z<=doll.handler.position.z && !player.victory){ CONDICION DE VICTORIA
+		if(player.keys==keyNumber&& !player.victory){ //CONDICION DE VICTORIA
         player.victory=true;
         victorySound.play();
+		setFinalSinglePlayer(player);
         console.log("ganaste");
-
-    }*/
+   		}
     }else{
     	//game over
+		setFinalSinglePlayer(player);
     }
-    
-
+}
+function setFinalSinglePlayer(player){
+		let playerid=localStorage.getItem('idPlayer1');
+		let score=0;
+		if(!player.victory){
+			score = Math.round((player.keys/keyNumber*100));
+		}else{
+			score=100;
+		}
+		if (score<0){
+			score=0;
+		}
+		//let finaltime=new Date(player.timer * 1000);//.toISOString().substring(11, 8);
+		//Wed Dec 31 1969 00:00:21 GMT-0600 (hora estándar central) 18-25 -1
+		let fitime=new Date(null);
+		fitime.setHours(0, 0, 0, 0);
+		fitime.setSeconds(player.timer);
+		let finaltime=fitime.toString();
+		finaltime=finaltime.substring(16,24);
+		var formData = new FormData();
+		formData.append('playerid',playerid);
+        formData.append('score',score);
+        formData.append('victory',player.victory);
+		formData.append('time',finaltime);
+		formData.append('accion','updateScore');
+		$.ajax({
+			async:false,
+            url     : "./php/service_include.php",
+            method  : "POST",
+            data    : formData,
+            contentType:false,
+            cache:false,
+            processData: false
+        }).done(function (data, textEstado, jqXHR){
+			data=$.parseJSON(data);
+            if(data.result){
+                //enviar los datos a la pagina
+				if(!player.victory){
+					localStorage.setItem('score',score);
+					window.location='gameOver.html';
+				}else{
+					localStorage.setItem('score',score);
+					window.location='victory.html';
+				}  
+            }else{
+                alert("No se pudo actualizar la informacion del jugador");
+            }
+           
+        }).fail(function (data, textEstado, jqXHR){
+            alert("la solicitud fallos porque: " + textEstado);
+            console.log("la solicitud fallos porque: " + textEstado);
+        });
 }
 function onUpdateTwoPlayers(deltaTime){
 	players[0].mixer.update(deltaTime); //para hacer el update de la animacion necesita un deltatime
     players[1].mixer.update(deltaTime);
+	
     if (!players[0].death){
+		players[0].timer+=deltaTime;
         let state='idle';
-
+		players[0].forward=getSpeed(deltaTime,players[0]);
+		getInvisibility(deltaTime,players[0]);
         if(keys['W']){
-        	players[0].forward=10;
         	players[0].handler.translateZ(players[0].forward * deltaTime);
-            
+			console.log("VColision Antes: "+players[0].forward * deltaTime);
             state='walking';
         }
         if(keys['S']){
-        	players[0].forward=-10;
-            players[0].handler.translateZ(players[0].forward * deltaTime);
+            players[0].handler.translateZ(-players[0].forward * deltaTime);
             state='walking';
             
         }if(keys['A']){
@@ -1889,23 +2278,55 @@ function onUpdateTwoPlayers(deltaTime){
         	players[0].yaw=-5;
         	players[0].handler.rotation.y += players[0].yaw * deltaTime;
             
+        }if (keys['P']){
+			isPaused=true;
         }
-		//var heightTest=getYonTerrain(players[0],rayFloor,myplane);
-	//	let relativeCameraOffset = new THREE.Vector3(0,11.5,-35);
-//
-	//	let cameraOffset = relativeCameraOffset.applyMatrix4( players[0].handler.matrixWorld );
-
-	//	cameras[0].position.x = cameraOffset.x;
-	//	cameras[0].position.y = cameraOffset.y;
-	//	cameras[0].position.z = cameraOffset.z;
-	//	cameras[0].lookAt( players[0].handler.position);
+		if(players[0].typeplyer=="Druida"){
+			if (keys['Z']){
+				//ACTIVAR BOTAS desactivo todo lo demás
+				if(players[0].pBoot.num>0){
+					if(players[0].pBoot.active==false){
+						//powerUp.play();
+						players[0].pBoot.active=true;
+						players[0].pEye.active=false;
+						players[0].pCoat.active=false;
+					}else{
+						players[0].pBoot.active=false;
+					}
+				}
+				
+			}if (keys['X']){
+				//ACTIVAR CAPA
+					if(players[0].pCoat.num>0){
+						if(players[0].pCoat.active==false){
+							//powerUp.play();
+							players[0].pCoat.active=true;
+							players[0].pBoot.active=false;
+							players[0].pEye.active=false;
+						}else{
+							players[0].pCoat.active=false;
+						}
+				}
+			}if (keys['C']){
+				//ACTIVAR OJO
+				if(players[0].pEye.num>0){
+					if(players[0].pEye.active==false){
+						//powerUp.play();
+						players[0].pEye.active=true;
+						players[0].pBoot.active=false;
+						players[0].pCoat.active=false;
+					}else{
+						players[0].pEye.active=false;
+					}
+				}
+			}
+		}
+		
 	const offset = calculateOffset(player[0].handler);
 	const lookat = calculateLookat(player[0].handler);
 
 	cameras[0].position.copy(offset);
 	cameras[0].lookAt(lookat);
-        //cameras[0].position.x = players[0].handler.position.x;
-		//cameras[0].position.z = players[0].handler.position.z;
 
         if (lastState!=state){
             const lastAnimation=players[0].actions[lastState];
@@ -1917,11 +2338,48 @@ function onUpdateTwoPlayers(deltaTime){
             const crossFadeTime=0.2; //tiempo de transicion en seg
             lastAnimation.crossFadeTo(newAnimation,crossFadeTime).play(); //para realizar la transicion suave
             lastState=state;
+			if(players[0].typeplyer=="Druida"){
+				runningChild.play();
+			}else{
+				monsterSound.play();
+			}
+        }else{
+        	if(state!="walking"){
+				if(players[0].typeplyer=="Druida"){
+					if(runningChild.isPlaying){
+						runningChild.stop();
+					}
+				}else{
+					if(monsterSound.isPlaying){
+						monsterSound.stop();
+					}
+				}
+        		
+        	}
+        	
         }
-    } //victory condition
+		if(loadedAssets>15){
+			
+			raycaster.set(players[0].handler.position, players[0].rayo);
+			var colision=raycaster.intersectObjects(itemsCollectable,true);
+
+			if(colision.length>0 &&colision[0].distance<=1 ){
+				getItem(colision,players[0]);
+				colision=null;
+			}
+		}
+		if(players[0].keys==keyNumber&& !players[0].victory){ //CONDICION DE VICTORIA
+			players[0].victory=true;
+			victorySound.play();
+			setFinalSinglePlayer(players[0]);
+			console.log("ganaste");
+		}
+    }else{
+		setFinalSinglePlayer(players[0]);
+	} 
 
     if (!players[1].death){
-
+		players[1].timer+=deltaTime;
     	let state2='idle';
 
         if(keys['I']){
@@ -1944,14 +2402,49 @@ function onUpdateTwoPlayers(deltaTime){
         	players[1].handler.rotation.y += players[1].yaw * deltaTime;
             
         }
-	//	let relativeCameraOffset = new THREE.Vector3(5,11.5,-35);
-
-	//	let cameraOffset = relativeCameraOffset.applyMatrix4( players[1].handler.matrixWorld );
-
-	//	cameras[1].position.x = cameraOffset.x;
-	//	cameras[1].position.y = cameraOffset.y;
-	//	cameras[1].position.z = cameraOffset.z;
-	//	cameras[1].lookAt( players[1].handler.position);
+		if (keys['P']){
+			isPaused=true;
+        }
+		if(players[1].typeplyer=="Druida"){
+			if (keys['B']){
+				//ACTIVAR BOTAS desactivo todo lo demás
+				if(players[1].pBoot.num>0){
+					if(players[1].pBoot.active==false){
+						//powerUp.play();
+						players[1].pBoot.active=true;
+						players[1].pEye.active=false;
+						players[1].pCoat.active=false;
+					}else{
+						players[1].pBoot.active=false;
+					}
+				}
+				
+			}if (keys['N']){
+				//ACTIVAR CAPA
+					if(players[1].pCoat.num>0){
+						if(players[1].pCoat.active==false){
+							//powerUp.play();
+							players[1].pCoat.active=true;
+							players[1].pBoot.active=false;
+							players[1].pEye.active=false;
+						}else{
+							players[1].pCoat.active=false;
+						}
+				}
+			}if (keys['M']){
+				//ACTIVAR OJO
+				if(players[1].pEye.num>0){
+					if(players[1].pEye.active==false){
+						//powerUp.play();
+						players[1].pEye.active=true;
+						players[1].pBoot.active=false;
+						players[1].pCoat.active=false;
+					}else{
+						players[1].pEye.active=false;
+					}
+				}
+			}
+		}
 	const offset = calculateOffset(player[1].handler);
 	const lookat = calculateLookat(player[1].handler);
 
@@ -1968,9 +2461,45 @@ function onUpdateTwoPlayers(deltaTime){
             const crossFadeTime=0.2; //tiempo de transicion en seg
             lastAnimation.crossFadeTo(newAnimation,crossFadeTime).play(); //para realizar la transicion suave
             lastState2=state2;
+			if(players[1].typeplyer=="Druida"){
+				runningChild.play();
+			}else{
+				monsterSound.play();
+			}
+        }else{
+        	if(state2!="walking"){
+				if(players[1].typeplyer=="Druida"){
+					if(runningChild.isPlaying){
+						runningChild.stop();
+					}
+				}else{
+					if(monsterSound.isPlaying){
+						monsterSound.stop();
+					}
+				}
+        		
+        	}
+        	
         }
-    } //victory condition
+		if(loadedAssets>15){
+			
+			raycaster.set(players[1].handler.position, players[1].rayo);
+			var colision=raycaster.intersectObjects(itemsCollectable,true);
 
+			if(colision.length>0 &&colision[0].distance<=1 ){
+				getItem(colision,players[1]);
+				colision=null;
+			}
+		}
+		if(players[1].keys==keyNumber&& !players[1].victory){ //CONDICION DE VICTORIA
+			players[1].victory=true;
+			victorySound.play();
+			setFinalSinglePlayer(players[1]);
+			console.log("ganaste");
+		}
+    }else{//perder
+		setFinalSinglePlayer(players[1]);
+	} 
 
 }
 
@@ -1996,621 +2525,1642 @@ function onUpdateMulti(deltaTime){
 	updateParticles(deltaTime);
 
 }
-
 function render(){
-	//Colisiones
-	const P1 =scene.getObjectByName('Jugador');
-	const Vcolision= (player.forward * deltaTime*-1)-.5
-	
-
-if (escenaro1)
-{
-	const CO1 = scene.getObjectByName('Muro1');
-	const CO2 = scene.getObjectByName('Muro2');
-	const CO3 = scene.getObjectByName('Muro3');
-	const CO4 = scene.getObjectByName('Muro4');
-	const CO4_1 = scene.getObjectByName('Muro4_1');
-
-
-	const CO5 = scene.getObjectByName('Muro5');
-	const CO6 = scene.getObjectByName('Muro6');
-	const CO7 = scene.getObjectByName('Muro7');
-	const CO7_1 = scene.getObjectByName('Muro7_1');
-	const CO7_2 = scene.getObjectByName('Muro7_2');
-
-
-	const CO9 = scene.getObjectByName('Muro9');
-	const CO10 = scene.getObjectByName('Muro10');
-	const CO11 = scene.getObjectByName('Muro11');
-	const CO11_1 = scene.getObjectByName('Muro11_1');
-
-	const CO12 = scene.getObjectByName('Muro12');
-	const CO13 = scene.getObjectByName('Muro13');
-	const CO13_1 = scene.getObjectByName('Muro13_1');
-
-
-	const CO14 = scene.getObjectByName('Muro14');
-	const CO15 = scene.getObjectByName('Muro15');
-	const CO16 = scene.getObjectByName('Muro16');
-
-	if (CO1 && P1)
-	{
-		var SecondBB = new THREE.Box3().setFromObject(P1);
-		var firstBB = new THREE.Box3().setFromObject(CO1);
-		var firstBB1 = new THREE.Box3().setFromObject(CO2);
-		var firstBB2 = new THREE.Box3().setFromObject(CO3);
-		var firstBB3 = new THREE.Box3().setFromObject(CO4);
-		var firstBB3_1 = new THREE.Box3().setFromObject(CO4_1);
-
-		var firstBB4 = new THREE.Box3().setFromObject(CO5);
-		var firstBB5 = new THREE.Box3().setFromObject(CO6);
-		var firstBB6 = new THREE.Box3().setFromObject(CO7);
-		var firstBB6_1 = new THREE.Box3().setFromObject(CO7_1);
-		var firstBB6_2 = new THREE.Box3().setFromObject(CO7_2);
-
-
-		var firstBB8 = new THREE.Box3().setFromObject(CO9);
-		var firstBB9 = new THREE.Box3().setFromObject(CO10);
-		var firstBB10 = new THREE.Box3().setFromObject(CO11);
-		var firstBB10_1 = new THREE.Box3().setFromObject(CO11_1);
-
-
-		var firstBB11 = new THREE.Box3().setFromObject(CO12);
-		var firstBB12 = new THREE.Box3().setFromObject(CO13);
-		var firstBB12_1 = new THREE.Box3().setFromObject(CO13_1);
-
-		var firstBB13 = new THREE.Box3().setFromObject(CO14);
-		var firstBB14 = new THREE.Box3().setFromObject(CO15);
-		var firstBB15 = new THREE.Box3().setFromObject(CO16);
-
- 		if (firstBB.intersectsBox(SecondBB))
- 		{
-			 player.handler.translateZ(Vcolision);	
-			}
-		if (firstBB1.intersectsBox(SecondBB))
-		{
-			player.handler.translateZ(Vcolision);	
-		}
-	   if (firstBB2.intersectsBox(SecondBB))
-	   {
-		   player.handler.translateZ(Vcolision);		
-	  }
-	  if (firstBB3.intersectsBox(SecondBB))
-	  {
-		  player.handler.translateZ(Vcolision);		
-	 }
-	 if (firstBB4.intersectsBox(SecondBB))
-	 {
-		 player.handler.translateZ(Vcolision);		
-	}
-	if (firstBB3_1.intersectsBox(SecondBB))
-	{
-		player.handler.translateZ(Vcolision);		
-   }
-	if (firstBB5.intersectsBox(SecondBB))
-	{
-		player.handler.translateZ(Vcolision);		
-   }
-   if (firstBB6.intersectsBox(SecondBB))
-   {
-	   player.handler.translateZ(Vcolision);		
-  }
-  if (firstBB6_1.intersectsBox(SecondBB))
-  {
-	  player.handler.translateZ(Vcolision);		
- }
- if (firstBB6_2.intersectsBox(SecondBB))
- {
-	 player.handler.translateZ(Vcolision);		
-}
-
- if (firstBB8.intersectsBox(SecondBB))
- {
-	 player.handler.translateZ(Vcolision);		
-}
-if (firstBB9.intersectsBox(SecondBB))
-{
-	player.handler.translateZ(Vcolision);		
-}
-if (firstBB10.intersectsBox(SecondBB))
-{
-	player.handler.translateZ(Vcolision);		
-}
-if (firstBB10_1.intersectsBox(SecondBB))
-{
-	player.handler.translateZ(Vcolision);		
-}
-if (firstBB11.intersectsBox(SecondBB))
-{
-	player.handler.translateZ(Vcolision);		
-}
-if (firstBB12.intersectsBox(SecondBB))
-{
-	player.handler.translateZ(Vcolision);		
-}
-if (firstBB12_1.intersectsBox(SecondBB))
-{
-	player.handler.translateZ(Vcolision);		
-}
-if (firstBB13.intersectsBox(SecondBB))
-{
-	player.handler.translateZ(Vcolision);		
-}
-if (firstBB14.intersectsBox(SecondBB))
-{
-	player.handler.translateZ(Vcolision);		
-}
-if (firstBB15.intersectsBox(SecondBB))
-{
-	player.handler.translateZ(Vcolision);		
-}
-	}
-
-//Collisiones		
-	}
-if(escenaro2)
-{
-	const CO2_1 = scene.getObjectByName('2Muro1');
-	const CO2_2 = scene.getObjectByName('2Muro2');
-	const CO2_3 = scene.getObjectByName('2Muro3');
-	const CO2_4 = scene.getObjectByName('2Muro4');
-	const CO2_5 = scene.getObjectByName('2Muro5');
-	const CO2_6 = scene.getObjectByName('2Muro6');
-	const CO2_7 = scene.getObjectByName('2Muro7');
-	const CO2_8 = scene.getObjectByName('2Muro8');
-	const CO2_9 = scene.getObjectByName('2Muro9');
-	const CO2_10 = scene.getObjectByName('2Muro10');
-	const CO2_11 = scene.getObjectByName('2Muro11');
-	const CO2_12 = scene.getObjectByName('2Muro12');
-	const CO2_13 = scene.getObjectByName('2Muro13');
-	const CO2_14 = scene.getObjectByName('2Muro14');
-	const CO2_15 = scene.getObjectByName('2Muro15');
-	const CO2_16 = scene.getObjectByName('2Muro16');
-	const CO2_17 = scene.getObjectByName('2Muro17');
-	const CO2_18 = scene.getObjectByName('2Muro18');
-	const CO2_19 = scene.getObjectByName('2Muro19');
-	const CO2_20 = scene.getObjectByName('2Muro20');
-	const CO2_21 = scene.getObjectByName('2Muro21');
-	const CO2_22 = scene.getObjectByName('2Muro22');
-	const CO2_23 = scene.getObjectByName('2Muro23');
-	const CO2_24 = scene.getObjectByName('2Muro24');
-	const CO2_25 = scene.getObjectByName('2Muro25');
-	const CO2_26 = scene.getObjectByName('2Muro26');
-	const CO2_27 = scene.getObjectByName('2Muro27');
-	const CO2_28 = scene.getObjectByName('2Muro28');
-	const CO2_29 = scene.getObjectByName('2Muro29');
-	const CO2_30 = scene.getObjectByName('2Muro30');
-	const CO2_31 = scene.getObjectByName('2Muro31');
-	const CO2_32 = scene.getObjectByName('2Muro32');
-
- if (CO2_1 && P1)
- {	
-
-	 var Second2BB = new THREE.Box3().setFromObject(P1);
-	 var first2BB_1 = new THREE.Box3().setFromObject(CO2_1);
-	 var first2BB_2 = new THREE.Box3().setFromObject(CO2_2);
-	 var first2BB_3 = new THREE.Box3().setFromObject(CO2_3);
-	 var first2BB_4 = new THREE.Box3().setFromObject(CO2_4);
-	 var first2BB_5 = new THREE.Box3().setFromObject(CO2_5);
-	 var first2BB_6 = new THREE.Box3().setFromObject(CO2_6);
-	 var first2BB_7 = new THREE.Box3().setFromObject(CO2_7);
-	 var first2BB_8 = new THREE.Box3().setFromObject(CO2_8);
-	 var first2BB_9 = new THREE.Box3().setFromObject(CO2_9);
-	 var first2BB_10 = new THREE.Box3().setFromObject(CO2_10);
-	 var first2BB_11 = new THREE.Box3().setFromObject(CO2_11);
-	 var first2BB_12 = new THREE.Box3().setFromObject(CO2_12);
-	 var first2BB_13 = new THREE.Box3().setFromObject(CO2_13);
-	 var first2BB_14 = new THREE.Box3().setFromObject(CO2_14);
-	 var first2BB_15 = new THREE.Box3().setFromObject(CO2_15);
-	 var first2BB_16 = new THREE.Box3().setFromObject(CO2_16);
-	 var first2BB_17 = new THREE.Box3().setFromObject(CO2_17);
-	 var first2BB_18 = new THREE.Box3().setFromObject(CO2_18);
-	 var first2BB_19 = new THREE.Box3().setFromObject(CO2_19);
-	 var first2BB_20 = new THREE.Box3().setFromObject(CO2_20);
-	 var first2BB_21 = new THREE.Box3().setFromObject(CO2_21);
-	 var first2BB_22 = new THREE.Box3().setFromObject(CO2_22);
-	 var first2BB_23 = new THREE.Box3().setFromObject(CO2_23);
-	 var first2BB_24 = new THREE.Box3().setFromObject(CO2_24);
-	 var first2BB_25 = new THREE.Box3().setFromObject(CO2_25);
-	 var first2BB_26 = new THREE.Box3().setFromObject(CO2_26);
-	 var first2BB_27 = new THREE.Box3().setFromObject(CO2_27);
-	 var first2BB_28 = new THREE.Box3().setFromObject(CO2_28);
-	 var first2BB_29 = new THREE.Box3().setFromObject(CO2_29);
-	 var first2BB_30 = new THREE.Box3().setFromObject(CO2_30);
-	 var first2BB_31 = new THREE.Box3().setFromObject(CO2_31);
-	 var first2BB_32= new THREE.Box3().setFromObject(CO2_32);
-
-
-	 if (first2BB_1.intersectsBox(Second2BB))
-		 {
-		 player.handler.translateZ(Vcolision);	
-		 }
-	 if (first2BB_2.intersectsBox(Second2BB))
-		 {
-		 player.handler.translateZ(Vcolision);	
-		 }
-	 if (first2BB_3.intersectsBox(Second2BB))
-		 {
-		 player.handler.translateZ(Vcolision);	
-		 }
-	 if (first2BB_4.intersectsBox(Second2BB))
-		 {
-		 player.handler.translateZ(Vcolision);	
-		 }
-	 if (first2BB_5.intersectsBox(Second2BB))
-		 {
-		 player.handler.translateZ(Vcolision);	
-		 }
-	 if (first2BB_6.intersectsBox(Second2BB))
-		 {
-		 player.handler.translateZ(Vcolision);	
-		 }
-	 if (first2BB_7.intersectsBox(Second2BB))
-		 {
-		 player.handler.translateZ(Vcolision);	
-		 }
-	 if (first2BB_8.intersectsBox(Second2BB))
-		 {
-		 player.handler.translateZ(Vcolision);	
-		 }
-	 if (first2BB_9.intersectsBox(Second2BB))
-		 {
-		 player.handler.translateZ(Vcolision);	
-		 }
-	 if (first2BB_10.intersectsBox(Second2BB))
-		 {
-		 player.handler.translateZ(Vcolision);	
-		 }
-	 if (first2BB_11.intersectsBox(Second2BB))
-		 {
-		 player.handler.translateZ(Vcolision);	
-		 }
-	 if (first2BB_12.intersectsBox(Second2BB))
-		 {
-		 player.handler.translateZ(Vcolision);	
-		 }
-	 if (first2BB_13.intersectsBox(Second2BB))
-		 {
-		 player.handler.translateZ(Vcolision);	
-		 }
-	 if (first2BB_14.intersectsBox(Second2BB))
-		 {
-		 player.handler.translateZ(Vcolision);	
-		 }
-	 if (first2BB_15.intersectsBox(Second2BB))
-		 {
-		 player.handler.translateZ(Vcolision);	
-		 }
-	 if (first2BB_16.intersectsBox(Second2BB))
-		 {
-		 player.handler.translateZ(Vcolision);	
-		 }
-	 if (first2BB_17.intersectsBox(Second2BB))
-		 {
-		 player.handler.translateZ(Vcolision);	
-		 }
-	 if (first2BB_18.intersectsBox(Second2BB))
-		 {
-		 player.handler.translateZ(Vcolision);	
-		 }
-	 if (first2BB_19.intersectsBox(Second2BB))
-		 {
-		 player.handler.translateZ(Vcolision);	
-		 }
-	 if (first2BB_20.intersectsBox(Second2BB))
-		 {
-		 player.handler.translateZ(Vcolision);	
-		 }
-	 if (first2BB_21.intersectsBox(Second2BB))
-		 {
-		 player.handler.translateZ(Vcolision);	
-		 }
-	 if (first2BB_22.intersectsBox(Second2BB))
-		 {
-		 player.handler.translateZ(Vcolision);	
-		 }
-	 if (first2BB_23.intersectsBox(Second2BB))
-		 {
-		 player.handler.translateZ(Vcolision);	
-		 }
-	 if (first2BB_24.intersectsBox(Second2BB))
-		 {
-		 player.handler.translateZ(Vcolision);	
-		 }
-	 if (first2BB_25.intersectsBox(Second2BB))
-		 {
-		 player.handler.translateZ(Vcolision);	
-		 }
-	 if (first2BB_26.intersectsBox(Second2BB))
-		 {
-		 player.handler.translateZ(Vcolision);	
-		 }
-	 if (first2BB_27.intersectsBox(Second2BB))
-		 {
-		 player.handler.translateZ(Vcolision);	
-		 }
-	 if (first2BB_28.intersectsBox(Second2BB))
-		 {
-		 player.handler.translateZ(Vcolision);	
-		 }
-	 if (first2BB_29.intersectsBox(Second2BB))
-		 {
-		 player.handler.translateZ(Vcolision);	
-		 }
-	 if (first2BB_30.intersectsBox(Second2BB))
-		 {
-		 player.handler.translateZ(Vcolision);	
-		 }
-	 if (first2BB_31.intersectsBox(Second2BB))
-		 {
-		 player.handler.translateZ(Vcolision);	
-		 }
-	 if (first2BB_32.intersectsBox(Second2BB))
-		 {
-		 player.handler.translateZ(Vcolision);	
-		 }
- }
-
-}
-	if(escenaro3)
-	{
-		const S_3 = scene.getObjectByName('Suelo3');
-		const S_4 = scene.getObjectByName('Suelo4');
-		const S_5 = scene.getObjectByName('Suelo5');
-		const S_6 = scene.getObjectByName('Suelo6');
-		const S_7 = scene.getObjectByName('Suelo7');
-		const S_8 = scene.getObjectByName('Suelo8');
-		const S_9 = scene.getObjectByName('Suelo9');
-		const S_10 = scene.getObjectByName('Suelo10');
-		const S_11 = scene.getObjectByName('Suelo11');
-		const S_12= scene.getObjectByName('Suelo12');
-		const S_13 = scene.getObjectByName('Suelo13');
-		const S_14 = scene.getObjectByName('Suelo14');
-		const T_1 = scene.getObjectByName('T1');
-		const T_2 = scene.getObjectByName('T2');
-		const T_3 = scene.getObjectByName('T3');
-		const T_4 = scene.getObjectByName('T4');
-		const T_5 = scene.getObjectByName('T5');
-		const T_6 = scene.getObjectByName('T6');
-		const T_7 = scene.getObjectByName('T7');
-		const T_8 = scene.getObjectByName('T8');
-		const T_9 = scene.getObjectByName('T9');
-		const T_10 = scene.getObjectByName('T10');
-		const T_11 = scene.getObjectByName('T11');
-		const T_12 = scene.getObjectByName('T12');
-		const T_13 = scene.getObjectByName('T13');
-		const T_14 = scene.getObjectByName('T14');
-		const T_15 = scene.getObjectByName('T15');
-		const T_16 = scene.getObjectByName('T16');
-		const T_17 = scene.getObjectByName('T17');
-		const T_18 = scene.getObjectByName('T18');
-		const T_19 = scene.getObjectByName('T19');
-		const T_20 = scene.getObjectByName('T20');
-		const T_21 = scene.getObjectByName('T21');
-		const T_22 = scene.getObjectByName('T22');
-		const T_23 = scene.getObjectByName('T23');
-		const T_24 = scene.getObjectByName('T24');
-		const J_C = scene.getObjectByName('ControladorJefe');
-
-
-			if(S_3 && P1 && T_1)
-			{
-				var Second2BB = new THREE.Box3().setFromObject(P1);
-				var first3BB_3 = new THREE.Box3().setFromObject(S_3);
-				var first3BB_4 = new THREE.Box3().setFromObject(S_4);
-				var first3BB_5 = new THREE.Box3().setFromObject(S_5);
-				var first3BB_6 = new THREE.Box3().setFromObject(S_6);
-				var first3BB_7 = new THREE.Box3().setFromObject(S_7);
-				var first3BB_8 = new THREE.Box3().setFromObject(S_8);
-				var first3BB_9 = new THREE.Box3().setFromObject(S_9);
-				var first3BB_10 = new THREE.Box3().setFromObject(S_10);
-				var first3BB_11 = new THREE.Box3().setFromObject(S_11);
-				var first3BB_12 = new THREE.Box3().setFromObject(S_12);
-				var first3BB_13 = new THREE.Box3().setFromObject(S_13);
-				var first3BB_14 = new THREE.Box3().setFromObject(S_14);
-				var first3BBT_1 = new THREE.Box3().setFromObject(T_1);
-				var first3BBT_2 = new THREE.Box3().setFromObject(T_2);
-				var first3BBT_3 = new THREE.Box3().setFromObject(T_3);
-				var first3BBT_4 = new THREE.Box3().setFromObject(T_4);
-				var first3BBT_5 = new THREE.Box3().setFromObject(T_5);
-				var first3BBT_6 = new THREE.Box3().setFromObject(T_6);
-				var first3BBT_7 = new THREE.Box3().setFromObject(T_7);
-				var first3BBT_8 = new THREE.Box3().setFromObject(T_8);
-				var first3BBT_9 = new THREE.Box3().setFromObject(T_9);
-				var first3BBT_10 = new THREE.Box3().setFromObject(T_10);
-				var first3BBT_11 = new THREE.Box3().setFromObject(T_11);
-				var first3BBT_12 = new THREE.Box3().setFromObject(T_12);
-				var first3BBT_13 = new THREE.Box3().setFromObject(T_13);
-				var first3BBT_14 = new THREE.Box3().setFromObject(T_14);
-				var first3BBT_15 = new THREE.Box3().setFromObject(T_15);
-				var first3BBT_16 = new THREE.Box3().setFromObject(T_16);
-				var first3BBT_17 = new THREE.Box3().setFromObject(T_17);
-				var first3BBT_18 = new THREE.Box3().setFromObject(T_18);
-				var first3BBT_19 = new THREE.Box3().setFromObject(T_19);
-				var first3BBT_20 = new THREE.Box3().setFromObject(T_20);
-				var first3BBT_21 = new THREE.Box3().setFromObject(T_21);
-				var first3BBT_22 = new THREE.Box3().setFromObject(T_22);
-				var first3BBT_23 = new THREE.Box3().setFromObject(T_23);
-				var first3BBT_24 = new THREE.Box3().setFromObject(T_24);
-				var first3BBJ = new THREE.Box3().setFromObject(J_C);
-
-
-
-				if (first3BB_3.intersectsBox(Second2BB))
-				{
-				player.handler.translateZ(Vcolision);	
-				}
-				if (first3BB_4.intersectsBox(Second2BB))
-				{
-				player.handler.translateZ(Vcolision);	
-				}
-				if (first3BB_5.intersectsBox(Second2BB))
-				{
-				player.handler.translateZ(Vcolision);	
-				}
-				if (first3BB_6.intersectsBox(Second2BB))
-				{
-				player.handler.translateZ(Vcolision);	
-				}
-				if (first3BB_7.intersectsBox(Second2BB))
-				{
-				player.handler.translateZ(Vcolision);	
-				}
-				if (first3BB_8.intersectsBox(Second2BB))
-				{
-				player.handler.translateZ(Vcolision);	
-				}
-				if (first3BB_9.intersectsBox(Second2BB))
-				{
-				player.handler.translateZ(Vcolision);	
-				}
-				if (first3BB_10.intersectsBox(Second2BB))
-				{
-				player.handler.translateZ(Vcolision);	
-				}
-				if (first3BB_11.intersectsBox(Second2BB))
-				{
-				player.handler.translateZ(Vcolision);	
-				}
-				if (first3BB_12.intersectsBox(Second2BB))
-				{
-				player.handler.translateZ(Vcolision);	
-				}
-				if (first3BB_13.intersectsBox(Second2BB))
-				{
-				player.handler.translateZ(Vcolision);	
-				}
-				if (first3BB_14.intersectsBox(Second2BB))
-				{
-				player.handler.translateZ(Vcolision);	
-				}
-				if (first3BBT_1.intersectsBox(Second2BB))
-				{
-				player.handler.translateZ(Vcolision);	
-				}
-				if (first3BBT_2.intersectsBox(Second2BB))
-				{
-				player.handler.translateZ(Vcolision);	
-				}
-				if (first3BBT_3.intersectsBox(Second2BB))
-				{
-				player.handler.translateZ(Vcolision);	
-				}
-				if (first3BBT_4.intersectsBox(Second2BB))
-				{
-				player.handler.translateZ(Vcolision);	
-				}
-				if (first3BBT_5.intersectsBox(Second2BB))
-				{
-				player.handler.translateZ(Vcolision);	
-				}
-				if (first3BBT_6.intersectsBox(Second2BB))
-				{
-				player.handler.translateZ(Vcolision);	
-				}
-				if (first3BBT_7.intersectsBox(Second2BB))
-				{
-				player.handler.translateZ(Vcolision);	
-				}
-				if (first3BBT_8.intersectsBox(Second2BB))
-				{
-				player.handler.translateZ(Vcolision);	
-				}
-				if (first3BBT_9.intersectsBox(Second2BB))
-				{
-				player.handler.translateZ(Vcolision);	
-				}
-				if (first3BBT_10.intersectsBox(Second2BB))
-				{
-				player.handler.translateZ(Vcolision);	
-				}
-				if (first3BBT_11.intersectsBox(Second2BB))
-				{
-				player.handler.translateZ(Vcolision);	
-				}
-				if (first3BBT_12.intersectsBox(Second2BB))
-				{
-				player.handler.translateZ(Vcolision);	
-				}
-				if (first3BBT_13.intersectsBox(Second2BB))
-				{
-				player.handler.translateZ(Vcolision);	
-				}
-				if (first3BBT_14.intersectsBox(Second2BB))
-				{
-				player.handler.translateZ(Vcolision);	
-				}
-				if (first3BBT_15.intersectsBox(Second2BB))
-				{
-				player.handler.translateZ(Vcolision);	
-				}
-				if (first3BBT_16.intersectsBox(Second2BB))
-				{
-				player.handler.translateZ(Vcolision);	
-				}
-				if (first3BBT_17.intersectsBox(Second2BB))
-				{
-				player.handler.translateZ(Vcolision);	
-				}
-				if (first3BBT_18.intersectsBox(Second2BB))
-				{
-				player.handler.translateZ(Vcolision);	
-				}
-				if (first3BBT_19.intersectsBox(Second2BB))
-				{
-				player.handler.translateZ(Vcolision);	
-				}
-				if (first3BBT_20.intersectsBox(Second2BB))
-				{
-				player.handler.translateZ(Vcolision);	
-				}
-				if (first3BBT_21.intersectsBox(Second2BB))
-				{
-				player.handler.translateZ(Vcolision);	
-				}
-				if (first3BBT_22.intersectsBox(Second2BB))
-				{
-				player.handler.translateZ(Vcolision);	
-				}
-				if (first3BBT_23.intersectsBox(Second2BB))
-				{
-				player.handler.translateZ(Vcolision);	
-				}
-				if (first3BBT_24.intersectsBox(Second2BB))
-				{
-				player.handler.translateZ(Vcolision);	
-				}
-				if (first3BBJ.intersectsBox(Second2BB))
-				{
-				player.handler.translateZ(Vcolision);	
-				}
-
-			}
-
-	}
 
 		requestAnimationFrame(render);
-		deltaTime = clock.getDelta();
-		if(loadedAssets>=4){
-			onUpdateSingle(deltaTime);
-			const time = performance.now() * 0.001;	
-			var Wat= scene.getObjectByName("Awita");
-			Wat.material.uniforms[ 'time' ].value += 1.0 / 60.0;
-			renderer.render(scene,camera);
+		if(isPaused){
+			clock.stop();
+			if(keys['R']){
+				isPaused=false;
+				clock.start();
+			
+			}
+			
+		}else{
+		//Colisiones
+		const Vcolision= (player.forward * deltaTime*-1 )-.7;
+		if (escenaro1)
+		{
+			const P1 =scene.getObjectByName('Jugador');
+			const P2 =scene.getObjectByName('Jugador1');
+			const P3 =scene.getObjectByName('Jugador2');
+		
+			const E1 =scene.getObjectByName('C1');
+			const E2 =scene.getObjectByName('C2');
+			const E3 =scene.getObjectByName('C3');
+			const E4 =scene.getObjectByName('C4');
+		
+			const vel =.1;
+		//enemigos
+		
+		//1
+		if(pos_a==1)
+		{
+			E1.position.z+=vel;
+			if(E1.position.z>6)
+			{
+				pos_a=0;
+				E1.rotation.y=2 * Math.PI * (180 / 360);
+		
+			}
 		}
+		if(pos_a==0)
+		{
+			E1.position.z-=vel;
+		
+			if(E1.position.z<-21)
+			{
+				pos_a=1;
+				E1.rotation.y=0;
+		
+		
+			}
+		}
+		//2
+		if(pos_b==1)
+		{
+			E2.position.x+=vel;
+			if(E2.position.x>6)
+			{
+				pos_b=0;
+				E2.rotation.y=2 * Math.PI * (270 / 360);
+		
+			}
+		}
+		if(pos_b==0)
+		{
+			E2.position.x-=vel;
+		
+			if(E2.position.x<-6)
+			{
+				pos_b=1;
+				E2.rotation.y=2 * Math.PI * (90 / 360);
+		
+		
+			}
+		}
+		//3
+		if(pos_c==1)
+		{
+			E3.position.z+=vel;
+			if(E3.position.z>6)
+			{
+				pos_c=0;
+				E3.rotation.y=2 * Math.PI * (180 / 360);
+		
+			}
+		}
+		if(pos_c==0)
+		{
+			E3.position.z-=vel;
+		
+			if(E3.position.z<-21)
+			{
+				pos_c=1;
+				E3.rotation.y=0;
+		
+		
+			}
+		}
+		//4
+		if(pos_d==1)
+		{
+			E4.position.x+=vel;
+			if(E4.position.x>6)
+			{
+				pos_d=0;
+				E4.rotation.y=2 * Math.PI * (270 / 360);
+		
+			}
+		}
+		if(pos_d==0)
+		{
+			E4.position.x-=vel;
+		
+			if(E4.position.x<-6)
+			{
+				pos_d=1;
+				E4.rotation.y=2 * Math.PI * (90 / 360);
+		
+			}
+		}
+		//
+		
+			const CO1 = scene.getObjectByName('Muro1');
+			const CO2 = scene.getObjectByName('Muro2');
+			const CO3 = scene.getObjectByName('Muro3');
+			const CO4 = scene.getObjectByName('Muro4');
+			const CO4_1 = scene.getObjectByName('Muro4_1');
+		
+			const CO5 = scene.getObjectByName('Muro5');
+			const CO6 = scene.getObjectByName('Muro6');
+			const CO7 = scene.getObjectByName('Muro7');
+			const CO7_1 = scene.getObjectByName('Muro7_1');
+			const CO7_2 = scene.getObjectByName('Muro7_2');
+		
+		
+			const CO9 = scene.getObjectByName('Muro9');
+			const CO10 = scene.getObjectByName('Muro10');
+			const CO11 = scene.getObjectByName('Muro11');
+			const CO11_1 = scene.getObjectByName('Muro11_1');
+		
+			const CO12 = scene.getObjectByName('Muro12');
+			const CO13 = scene.getObjectByName('Muro13');
+			const CO13_1 = scene.getObjectByName('Muro13_1');
+		
+		
+			const CO14 = scene.getObjectByName('Muro14');
+			const CO15 = scene.getObjectByName('Muro15');
+			const CO16 = scene.getObjectByName('Muro16');
+		
+			if (CO1 && P1)
+			{
+				var SecondBB = new THREE.Box3().setFromObject(P1);
+				var firstBB = new THREE.Box3().setFromObject(CO1);
+				var firstBB1 = new THREE.Box3().setFromObject(CO2);
+				var firstBB2 = new THREE.Box3().setFromObject(CO3);
+				var firstBB3 = new THREE.Box3().setFromObject(CO4);
+				var firstBB3_1 = new THREE.Box3().setFromObject(CO4_1);
+		
+				var firstBB4 = new THREE.Box3().setFromObject(CO5);
+				var firstBB5 = new THREE.Box3().setFromObject(CO6);
+				var firstBB6 = new THREE.Box3().setFromObject(CO7);
+				var firstBB6_1 = new THREE.Box3().setFromObject(CO7_1);
+				var firstBB6_2 = new THREE.Box3().setFromObject(CO7_2);
+		
+		
+				var firstBB8 = new THREE.Box3().setFromObject(CO9);
+				var firstBB9 = new THREE.Box3().setFromObject(CO10);
+				var firstBB10 = new THREE.Box3().setFromObject(CO11);
+				var firstBB10_1 = new THREE.Box3().setFromObject(CO11_1);
+		
+		
+				var firstBB11 = new THREE.Box3().setFromObject(CO12);
+				var firstBB12 = new THREE.Box3().setFromObject(CO13);
+				var firstBB12_1 = new THREE.Box3().setFromObject(CO13_1);
+		
+				var firstBB13 = new THREE.Box3().setFromObject(CO14);
+				var firstBB14 = new THREE.Box3().setFromObject(CO15);
+				var firstBB15 = new THREE.Box3().setFromObject(CO16);
+		
+				var enemy1 =new THREE.Box3().setFromObject(E1);
+				var enemy2 =new THREE.Box3().setFromObject(E2);
+				var enemy3 =new THREE.Box3().setFromObject(E3);
+				var enemy4 =new THREE.Box3().setFromObject(E4);
+		
+		
+				if(E1 && P1)
+				{
+					if (enemy1.intersectsBox(SecondBB)||enemy2.intersectsBox(SecondBB)||enemy3.intersectsBox(SecondBB)||enemy4.intersectsBox(SecondBB))
+					{
+						player.handler.translateZ(Vcolision);
+						killPlayer(player);	
+					}
+				}
+		
+				//colisiones de escenario
+				 if (firstBB.intersectsBox(SecondBB)){
+					 player.handler.translateZ(Vcolision);	
+					}
+				if (firstBB1.intersectsBox(SecondBB))
+				{
+					player.handler.translateZ(Vcolision);	
+				}
+			   if (firstBB2.intersectsBox(SecondBB))
+			   {
+				   player.handler.translateZ(Vcolision);		
+			  }
+			  if (firstBB3.intersectsBox(SecondBB))
+			  {
+				  player.handler.translateZ(Vcolision);		
+			 }
+			 if (firstBB4.intersectsBox(SecondBB))
+			 {
+				 player.handler.translateZ(Vcolision);		
+			}
+			if (firstBB3_1.intersectsBox(SecondBB))
+			{
+				player.handler.translateZ(Vcolision);		
+		   }
+			if (firstBB5.intersectsBox(SecondBB))
+			{
+				player.handler.translateZ(Vcolision);		
+		   }
+		   if (firstBB6.intersectsBox(SecondBB))
+		   {
+			   player.handler.translateZ(Vcolision);		
+		  }
+		  if (firstBB6_1.intersectsBox(SecondBB))
+		  {
+			  player.handler.translateZ(Vcolision);		
+		 }
+		 if (firstBB6_2.intersectsBox(SecondBB))
+		 {
+			 player.handler.translateZ(Vcolision);		
+		}
+		
+		 if (firstBB8.intersectsBox(SecondBB))
+		 {
+			 player.handler.translateZ(Vcolision);		
+		}
+		if (firstBB9.intersectsBox(SecondBB))
+		{
+			player.handler.translateZ(Vcolision);		
+		}
+		if (firstBB10.intersectsBox(SecondBB))
+		{
+			player.handler.translateZ(Vcolision);		
+		}
+		if (firstBB10_1.intersectsBox(SecondBB))
+		{
+			player.handler.translateZ(Vcolision);		
+		}
+		if (firstBB11.intersectsBox(SecondBB))
+		{
+			player.handler.translateZ(Vcolision);		
+		}
+		if (firstBB12.intersectsBox(SecondBB))
+		{
+			player.handler.translateZ(Vcolision);		
+		}
+		if (firstBB12_1.intersectsBox(SecondBB))
+		{
+			player.handler.translateZ(Vcolision);		
+		}
+		if (firstBB13.intersectsBox(SecondBB))
+		{
+			player.handler.translateZ(Vcolision);		
+		}
+		if (firstBB14.intersectsBox(SecondBB))
+		{
+			player.handler.translateZ(Vcolision);		
+		}
+		if (firstBB15.intersectsBox(SecondBB))
+		{
+			player.handler.translateZ(Vcolision);		
+		}
+			}
+		
+			/*if (CO1 && P2 && P3)
+			{
+				var firstBB = new THREE.Box3().setFromObject(CO1);
+				var firstBB1 = new THREE.Box3().setFromObject(CO2);
+				var firstBB2 = new THREE.Box3().setFromObject(CO3);
+				var firstBB3 = new THREE.Box3().setFromObject(CO4);
+				var firstBB3_1 = new THREE.Box3().setFromObject(CO4_1);
+		
+				var firstBB4 = new THREE.Box3().setFromObject(CO5);
+				var firstBB5 = new THREE.Box3().setFromObject(CO6);
+				var firstBB6 = new THREE.Box3().setFromObject(CO7);
+				var firstBB6_1 = new THREE.Box3().setFromObject(CO7_1);
+				var firstBB6_2 = new THREE.Box3().setFromObject(CO7_2);
+		
+		
+				var firstBB8 = new THREE.Box3().setFromObject(CO9);
+				var firstBB9 = new THREE.Box3().setFromObject(CO10);
+				var firstBB10 = new THREE.Box3().setFromObject(CO11);
+				var firstBB10_1 = new THREE.Box3().setFromObject(CO11_1);
+		
+		
+				var firstBB11 = new THREE.Box3().setFromObject(CO12);
+				var firstBB12 = new THREE.Box3().setFromObject(CO13);
+				var firstBB12_1 = new THREE.Box3().setFromObject(CO13_1);
+		
+				var firstBB13 = new THREE.Box3().setFromObject(CO14);
+				var firstBB14 = new THREE.Box3().setFromObject(CO15);
+				var firstBB15 = new THREE.Box3().setFromObject(CO16);
+		
+				var enemy1 =new THREE.Box3().setFromObject(E1);
+				var enemy2 =new THREE.Box3().setFromObject(E2);
+				var enemy3 =new THREE.Box3().setFromObject(E3);
+				var enemy4 =new THREE.Box3().setFromObject(E4);
+		
+				var SecondBB1 = new THREE.Box3().setFromObject(P1);
+				var SecondBB2 = new THREE.Box3().setFromObject(P1);
+				if (firstBB.intersectsBox(SecondBB1))
+				{
+					player.handler.translateZ(Vcolision);	
+				   }
+			   if (firstBB1.intersectsBox(SecondBB1))
+			   {
+				   player.handler.translateZ(Vcolision);	
+			   }
+			  if (firstBB2.intersectsBox(SecondBB1))
+			  {
+				  player.handler.translateZ(Vcolision);		
+			 }
+			 if (firstBB3.intersectsBox(SecondBB1))
+			 {
+				 player.handler.translateZ(Vcolision);		
+			}
+			if (firstBB4.intersectsBox(SecondBB1))
+			{
+				player.handler.translateZ(Vcolision);		
+		   }
+		   if (firstBB3_1.intersectsBox(SecondBB1))
+		   {
+			   player.handler.translateZ(Vcolision);		
+		  }
+		   if (firstBB5.intersectsBox(SecondBB1))
+		   {
+			   player.handler.translateZ(Vcolision);		
+		  }
+		  if (firstBB6.intersectsBox(SecondBB1))
+		  {
+			  player.handler.translateZ(Vcolision);		
+		 }
+		 if (firstBB6_1.intersectsBox(SecondBB1))
+		 {
+			 player.handler.translateZ(Vcolision);		
+		}
+		if (firstBB6_2.intersectsBox(SecondBB1))
+		{
+			player.handler.translateZ(Vcolision);		
+		}
+		
+		if (firstBB8.intersectsBox(SecondBB1))
+		{
+			player.handler.translateZ(Vcolision);		
+		}
+		if (firstBB9.intersectsBox(SecondBB1))
+		{
+		   player.handler.translateZ(Vcolision);		
+		}
+		if (firstBB10.intersectsBox(SecondBB1))
+		{
+		   player.handler.translateZ(Vcolision);		
+		}
+		if (firstBB10_1.intersectsBox(SecondBB1))
+		{
+		   player.handler.translateZ(Vcolision);		
+		}
+		if (firstBB11.intersectsBox(SecondBB1))
+		{
+		   player.handler.translateZ(Vcolision);		
+		}
+		if (firstBB12.intersectsBox(SecondBB1))
+		{
+		   player.handler.translateZ(Vcolision);		
+		}
+		if (firstBB12_1.intersectsBox(SecondBB1))
+		{
+		   player.handler.translateZ(Vcolision);		
+		}
+		if (firstBB13.intersectsBox(SecondBB1))
+		{
+		   player.handler.translateZ(Vcolision);		
+		}
+		if (firstBB14.intersectsBox(SecondBB1))
+		{
+		   player.handler.translateZ(Vcolision);		
+		}
+		if (firstBB15.intersectsBox(SecondBB1))
+		{
+		   player.handler.translateZ(Vcolision);		
+		}
+		//
+		if (firstBB.intersectsBox(SecondBB2))
+				 {
+					 player.handler.translateZ(Vcolision);	
+					}
+				if (firstBB1.intersectsBox(SecondBB2))
+				{
+					player.handler.translateZ(Vcolision);	
+				}
+			   if (firstBB2.intersectsBox(SecondBB2))
+			   {
+				   player.handler.translateZ(Vcolision);		
+			  }
+			  if (firstBB3.intersectsBox(SecondBB2))
+			  {
+				  player.handler.translateZ(Vcolision);		
+			 }
+			 if (firstBB4.intersectsBox(SecondBB2))
+			 {
+				 player.handler.translateZ(Vcolision);		
+			}
+			if (firstBB3_1.intersectsBox(SecondBB2))
+			{
+				player.handler.translateZ(Vcolision);		
+		   }
+			if (firstBB5.intersectsBox(SecondBB2))
+			{
+				player.handler.translateZ(Vcolision);		
+		   }
+		   if (firstBB6.intersectsBox(SecondBB2))
+		   {
+			   player.handler.translateZ(Vcolision);		
+		  }
+		  if (firstBB6_1.intersectsBox(SecondBB2))
+		  {
+			  player.handler.translateZ(Vcolision);		
+		 }
+		 if (firstBB6_2.intersectsBox(SecondBB2))
+		 {
+			 player.handler.translateZ(Vcolision);		
+		}
+		
+		 if (firstBB8.intersectsBox(SecondBB2))
+		 {
+			 player.handler.translateZ(Vcolision);		
+		}
+		if (firstBB9.intersectsBox(SecondBB2))
+		{
+			player.handler.translateZ(Vcolision);		
+		}
+		if (firstBB10.intersectsBox(SecondBB2))
+		{
+			player.handler.translateZ(Vcolision);		
+		}
+		if (firstBB10_1.intersectsBox(SecondBB2))
+		{
+			player.handler.translateZ(Vcolision);		
+		}
+		if (firstBB11.intersectsBox(SecondBB2))
+		{
+			player.handler.translateZ(Vcolision);		
+		}
+		if (firstBB12.intersectsBox(SecondBB2))
+		{
+			player.handler.translateZ(Vcolision);		
+		}
+		if (firstBB12_1.intersectsBox(SecondBB2))
+		{
+			player.handler.translateZ(Vcolision);		
+		}
+		if (firstBB13.intersectsBox(SecondBB2))
+		{
+			player.handler.translateZ(Vcolision);		
+		}
+		if (firstBB14.intersectsBox(SecondBB2))
+		{
+			player.handler.translateZ(Vcolision);		
+		}
+		if (firstBB15.intersectsBox(SecondBB2))
+		{
+			player.handler.translateZ(Vcolision);		
+		}
+		
+			}*/
+		//Collisiones		
+		}
+		if(escenaro2)
+		{
+			const P1 =scene.getObjectByName('Jugador');
+			const P2 =scene.getObjectByName('Jugador1');
+			const P3 =scene.getObjectByName('Jugador2');
+		
+			if(localStorageInfo.typeOfPlayer=="Druida"){
+				const EB1 =scene.getObjectByName('CB1');
+				const EB2 =scene.getObjectByName('CB2');
+				const EB3 =scene.getObjectByName('CB3');
+				const EB4 =scene.getObjectByName('CB4');
+				const EB5 =scene.getObjectByName('CB5');
+				const EB6 =scene.getObjectByName('CB6');
+				const EB7 =scene.getObjectByName('CB7');
+		
+				const vel =.1;
+			//1
+			if(pos1_a==1)
+			{
+				EB1.position.z+=vel;
+				if(EB1.position.z>2)
+				{
+					pos1_a=0;
+					EB1.rotation.y=2 * Math.PI * (180 / 360);
+				}
+			}
+			if(pos1_a==0)
+			{
+				EB1.position.z-=vel;
+		
+				if(EB1.position.z<-47)
+				{
+					pos1_a=1;
+					EB1.rotation.y=0;
+		
+				}
+			}
+			//2
+			if(pos1_b==1)
+			{
+				EB2.position.x+=vel;
+				if(EB2.position.x>22.5)
+				{
+					pos1_b=0;
+					EB2.rotation.y=2 * Math.PI * (270 / 360);
+				}
+			}
+			if(pos1_b==0)
+			{
+				EB2.position.x-=vel;
+		
+				if(EB2.position.x<-25)
+				{
+					pos1_b=1;
+					EB2.rotation.y=2 * Math.PI * (90 / 360);
+		
+				}
+			}
+			//3
+			if(pos1_c==1)
+			{
+				EB3.position.z+=vel;
+				if(EB3.position.z>2)
+				{
+					pos1_c=0;
+					EB3.rotation.y=2 * Math.PI * (180 / 360);;
+				}
+			}
+			if(pos1_c==0)
+			{
+				EB3.position.z-=vel;
+		
+				if(EB3.position.z<-47)
+				{
+					pos1_c=1;
+					EB3.rotation.y=0;
+		
+				}
+			}
+			//4
+			if(pos1_d==1)
+			{
+				EB4.position.z+=vel;
+				if(EB4.position.z>0)
+				{
+					pos1_d=0;
+					EB4.rotation.y=2 * Math.PI * (180 / 360);;
+				}
+			}
+			if(pos1_d==0)
+			{
+				EB4.position.z-=vel;
+		
+				if(EB4.position.z<-28)
+				{
+					pos1_d=1;
+					EB4.rotation.y=0;
+		
+				}
+			}
+			//5
+			if(pos1_e==1)
+			{
+				EB5.position.z+=vel;
+				if(EB5.position.z>-15)
+				{
+					pos1_e=0;
+					EB5.rotation.y=2 * Math.PI * (180 / 360);;
+				}
+			}
+			if(pos1_e==0)
+			{
+				EB5.position.z-=vel;
+		
+				if(EB5.position.z<-36)
+				{
+					pos1_e=1;
+					EB5.rotation.y=0;
+		
+				}
+			}
+			//6
+			if(pos1_f==1)
+			{
+				EB6.position.z+=vel;
+				if(EB6.position.z>-6)
+				{
+					pos1_f=0;
+					EB6.rotation.y=2 * Math.PI * (180 / 360);;
+				}
+			}
+			if(pos1_f==0)
+			{
+				EB6.position.z-=vel;
+		
+				if(EB6.position.z<-47)
+				{
+					pos1_f=1;
+					EB6.rotation.y=0;
+		
+				}
+			}
+			//7
+			if(pos1_g==1)
+			{
+				EB7.position.x+=vel;
+				if(EB7.position.x>10)
+				{
+					pos1_g=0;
+					EB7.rotation.y=2 * Math.PI * (270 / 360);
+				}
+			}
+			if(pos1_g==0)
+			{
+				EB7.position.x-=vel;
+		
+				if(EB7.position.x<-2)
+				{
+					pos1_g=1;
+					EB7.rotation.y=2 * Math.PI * (90 / 360);
+		
+				}
+			}
+			}
+			
+		//
+		
+			const CO2_1 = scene.getObjectByName('2Muro1');
+			const CO2_2 = scene.getObjectByName('2Muro2');
+			const CO2_3 = scene.getObjectByName('2Muro3');
+			const CO2_4 = scene.getObjectByName('2Muro4');
+			const CO2_5 = scene.getObjectByName('2Muro5');
+			const CO2_6 = scene.getObjectByName('2Muro6');
+			const CO2_7 = scene.getObjectByName('2Muro7');
+			const CO2_8 = scene.getObjectByName('2Muro8');
+			const CO2_9 = scene.getObjectByName('2Muro9');
+			const CO2_10 = scene.getObjectByName('2Muro10');
+			const CO2_11 = scene.getObjectByName('2Muro11');
+			const CO2_12 = scene.getObjectByName('2Muro12');
+			const CO2_13 = scene.getObjectByName('2Muro13');
+			const CO2_14 = scene.getObjectByName('2Muro14');
+			const CO2_15 = scene.getObjectByName('2Muro15');
+			const CO2_16 = scene.getObjectByName('2Muro16');
+			const CO2_17 = scene.getObjectByName('2Muro17');
+			const CO2_18 = scene.getObjectByName('2Muro18');
+			const CO2_19 = scene.getObjectByName('2Muro19');
+			const CO2_20 = scene.getObjectByName('2Muro20');
+			const CO2_21 = scene.getObjectByName('2Muro21');
+			const CO2_22 = scene.getObjectByName('2Muro22');
+			const CO2_23 = scene.getObjectByName('2Muro23');
+			const CO2_24 = scene.getObjectByName('2Muro24');
+			const CO2_25 = scene.getObjectByName('2Muro25');
+			const CO2_26 = scene.getObjectByName('2Muro26');
+			const CO2_27 = scene.getObjectByName('2Muro27');
+			const CO2_28 = scene.getObjectByName('2Muro28');
+			const CO2_29 = scene.getObjectByName('2Muro29');
+			const CO2_30 = scene.getObjectByName('2Muro30');
+			const CO2_31 = scene.getObjectByName('2Muro31');
+			const CO2_32 = scene.getObjectByName('2Muro32');
+		
+		 if (CO2_1 && P1)
+		 {	
+		
+			 var Second2BB = new THREE.Box3().setFromObject(P1);
+			 var first2BB_1 = new THREE.Box3().setFromObject(CO2_1);
+			 var first2BB_2 = new THREE.Box3().setFromObject(CO2_2);
+			 var first2BB_3 = new THREE.Box3().setFromObject(CO2_3);
+			 var first2BB_4 = new THREE.Box3().setFromObject(CO2_4);
+			 var first2BB_5 = new THREE.Box3().setFromObject(CO2_5);
+			 var first2BB_6 = new THREE.Box3().setFromObject(CO2_6);
+			 var first2BB_7 = new THREE.Box3().setFromObject(CO2_7);
+			 var first2BB_8 = new THREE.Box3().setFromObject(CO2_8);
+			 var first2BB_9 = new THREE.Box3().setFromObject(CO2_9);
+			 var first2BB_10 = new THREE.Box3().setFromObject(CO2_10);
+			 var first2BB_11 = new THREE.Box3().setFromObject(CO2_11);
+			 var first2BB_12 = new THREE.Box3().setFromObject(CO2_12);
+			 var first2BB_13 = new THREE.Box3().setFromObject(CO2_13);
+			 var first2BB_14 = new THREE.Box3().setFromObject(CO2_14);
+			 var first2BB_15 = new THREE.Box3().setFromObject(CO2_15);
+			 var first2BB_16 = new THREE.Box3().setFromObject(CO2_16);
+			 var first2BB_17 = new THREE.Box3().setFromObject(CO2_17);
+			 var first2BB_18 = new THREE.Box3().setFromObject(CO2_18);
+			 var first2BB_19 = new THREE.Box3().setFromObject(CO2_19);
+			 var first2BB_20 = new THREE.Box3().setFromObject(CO2_20);
+			 var first2BB_21 = new THREE.Box3().setFromObject(CO2_21);
+			 var first2BB_22 = new THREE.Box3().setFromObject(CO2_22);
+			 var first2BB_23 = new THREE.Box3().setFromObject(CO2_23);
+			 var first2BB_24 = new THREE.Box3().setFromObject(CO2_24);
+			 var first2BB_25 = new THREE.Box3().setFromObject(CO2_25);
+			 var first2BB_26 = new THREE.Box3().setFromObject(CO2_26);
+			 var first2BB_27 = new THREE.Box3().setFromObject(CO2_27);
+			 var first2BB_28 = new THREE.Box3().setFromObject(CO2_28);
+			 var first2BB_29 = new THREE.Box3().setFromObject(CO2_29);
+			 var first2BB_30 = new THREE.Box3().setFromObject(CO2_30);
+			 var first2BB_31 = new THREE.Box3().setFromObject(CO2_31);
+			 var first2BB_32= new THREE.Box3().setFromObject(CO2_32);
+			 // separacion 
+			 if(localStorageInfo.typeOfPlayer=="Druida"){
+				var EnemyB1= new THREE.Box3().setFromObject(EB1);
+				var EnemyB2= new THREE.Box3().setFromObject(EB2);
+				var EnemyB3= new THREE.Box3().setFromObject(EB3);
+				var EnemyB4= new THREE.Box3().setFromObject(EB4);
+				var EnemyB5= new THREE.Box3().setFromObject(EB5);
+				var EnemyB6= new THREE.Box3().setFromObject(EB6);
+				var EnemyB7= new THREE.Box3().setFromObject(EB7);
+		
+				if (EnemyB1.intersectsBox(Second2BB)||EnemyB2.intersectsBox(Second2BB)||EnemyB3.intersectsBox(Second2BB)
+					||EnemyB4.intersectsBox(Second2BB)||EnemyB5.intersectsBox(Second2BB)||EnemyB6.intersectsBox(Second2BB)
+					||EnemyB7.intersectsBox(Second2BB)){
+						player.handler.translateZ(Vcolision);	
+					}
+			 }
+			 
+		
+			 if (first2BB_1.intersectsBox(Second2BB))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_2.intersectsBox(Second2BB))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_3.intersectsBox(Second2BB))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_4.intersectsBox(Second2BB))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_5.intersectsBox(Second2BB))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_6.intersectsBox(Second2BB))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_7.intersectsBox(Second2BB))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_8.intersectsBox(Second2BB))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_9.intersectsBox(Second2BB))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_10.intersectsBox(Second2BB))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_11.intersectsBox(Second2BB))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_12.intersectsBox(Second2BB))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_13.intersectsBox(Second2BB))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_14.intersectsBox(Second2BB))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_15.intersectsBox(Second2BB))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_16.intersectsBox(Second2BB))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_17.intersectsBox(Second2BB))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_18.intersectsBox(Second2BB))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_19.intersectsBox(Second2BB))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_20.intersectsBox(Second2BB))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_21.intersectsBox(Second2BB))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_22.intersectsBox(Second2BB))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_23.intersectsBox(Second2BB))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_24.intersectsBox(Second2BB))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_25.intersectsBox(Second2BB))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_26.intersectsBox(Second2BB))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_27.intersectsBox(Second2BB))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_28.intersectsBox(Second2BB))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_29.intersectsBox(Second2BB))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_30.intersectsBox(Second2BB))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_31.intersectsBox(Second2BB))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_32.intersectsBox(Second2BB))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+		 }
+		
+		/*if(CO2_1 &&P2 &&P3)
+		{
+			var Second2BB1 = new THREE.Box3().setFromObject(P2);
+			var Second2BB2 = new THREE.Box3().setFromObject(P3);
+		
+			var first2BB_1 = new THREE.Box3().setFromObject(CO2_1);
+			var first2BB_2 = new THREE.Box3().setFromObject(CO2_2);
+			var first2BB_3 = new THREE.Box3().setFromObject(CO2_3);
+			var first2BB_4 = new THREE.Box3().setFromObject(CO2_4);
+			var first2BB_5 = new THREE.Box3().setFromObject(CO2_5);
+			var first2BB_6 = new THREE.Box3().setFromObject(CO2_6);
+			var first2BB_7 = new THREE.Box3().setFromObject(CO2_7);
+			var first2BB_8 = new THREE.Box3().setFromObject(CO2_8);
+			var first2BB_9 = new THREE.Box3().setFromObject(CO2_9);
+			var first2BB_10 = new THREE.Box3().setFromObject(CO2_10);
+			var first2BB_11 = new THREE.Box3().setFromObject(CO2_11);
+			var first2BB_12 = new THREE.Box3().setFromObject(CO2_12);
+			var first2BB_13 = new THREE.Box3().setFromObject(CO2_13);
+			var first2BB_14 = new THREE.Box3().setFromObject(CO2_14);
+			var first2BB_15 = new THREE.Box3().setFromObject(CO2_15);
+			var first2BB_16 = new THREE.Box3().setFromObject(CO2_16);
+			var first2BB_17 = new THREE.Box3().setFromObject(CO2_17);
+			var first2BB_18 = new THREE.Box3().setFromObject(CO2_18);
+			var first2BB_19 = new THREE.Box3().setFromObject(CO2_19);
+			var first2BB_20 = new THREE.Box3().setFromObject(CO2_20);
+			var first2BB_21 = new THREE.Box3().setFromObject(CO2_21);
+			var first2BB_22 = new THREE.Box3().setFromObject(CO2_22);
+			var first2BB_23 = new THREE.Box3().setFromObject(CO2_23);
+			var first2BB_24 = new THREE.Box3().setFromObject(CO2_24);
+			var first2BB_25 = new THREE.Box3().setFromObject(CO2_25);
+			var first2BB_26 = new THREE.Box3().setFromObject(CO2_26);
+			var first2BB_27 = new THREE.Box3().setFromObject(CO2_27);
+			var first2BB_28 = new THREE.Box3().setFromObject(CO2_28);
+			var first2BB_29 = new THREE.Box3().setFromObject(CO2_29);
+			var first2BB_30 = new THREE.Box3().setFromObject(CO2_30);
+			var first2BB_31 = new THREE.Box3().setFromObject(CO2_31);
+			var first2BB_32= new THREE.Box3().setFromObject(CO2_32);
+			//separacion
+			if(localStorageInfo.typeOfPlayer=="Druida"){
+				var EnemyB1= new THREE.Box3().setFromObject(EB1);
+				var EnemyB2= new THREE.Box3().setFromObject(EB2);
+				var EnemyB3= new THREE.Box3().setFromObject(EB3);
+				var EnemyB4= new THREE.Box3().setFromObject(EB4);
+				var EnemyB5= new THREE.Box3().setFromObject(EB5);
+				var EnemyB6= new THREE.Box3().setFromObject(EB6);
+				var EnemyB7= new THREE.Box3().setFromObject(EB7);
+		
+				if (EnemyB1.intersectsBox(Second2BB1))
+				{
+				player.handler.translateZ(Vcolision);	
+				}
+				if (EnemyB2.intersectsBox(Second2BB1))
+				{
+				player.handler.translateZ(Vcolision);	
+				} if (EnemyB3.intersectsBox(Second2BB1))
+				{
+				player.handler.translateZ(Vcolision);	
+				} if (EnemyB4.intersectsBox(Second2BB1))
+				{
+				player.handler.translateZ(Vcolision);	
+				} if (EnemyB5.intersectsBox(Second2BB1))
+				{
+				player.handler.translateZ(Vcolision);	
+				} if (EnemyB6.intersectsBox(Second2BB1))
+				{
+				player.handler.translateZ(Vcolision);	
+				} if (EnemyB7.intersectsBox(Second2BB1))
+				{
+				player.handler.translateZ(Vcolision);	
+				}
+					
+				if (EnemyB1.intersectsBox(Second2BB2))
+				{
+				player.handler.translateZ(Vcolision);	
+				}
+				if (EnemyB2.intersectsBox(Second2BB2))
+				{
+				player.handler.translateZ(Vcolision);	
+				} if (EnemyB3.intersectsBox(Second2BB2))
+				{
+				player.handler.translateZ(Vcolision);	
+				} if (EnemyB4.intersectsBox(Second2BB2))
+				{
+				player.handler.translateZ(Vcolision);	
+				} if (EnemyB5.intersectsBox(Second2BB2))
+				{
+				player.handler.translateZ(Vcolision);	
+				} if (EnemyB6.intersectsBox(Second2BB2))
+				{
+				player.handler.translateZ(Vcolision);	
+				} if (EnemyB7.intersectsBox(Second2BB2))
+				{
+				player.handler.translateZ(Vcolision);	
+				}
+		}
+		
+			if (first2BB_1.intersectsBox(Second2BB1))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_2.intersectsBox(Second2BB1))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_3.intersectsBox(Second2BB1))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_4.intersectsBox(Second2BB1))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_5.intersectsBox(Second2BB1))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_6.intersectsBox(Second2BB1))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_7.intersectsBox(Second2BB1))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_8.intersectsBox(Second2BB1))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_9.intersectsBox(Second2BB1))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_10.intersectsBox(Second2BB1))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_11.intersectsBox(Second2BB1))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_12.intersectsBox(Second2BB1))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_13.intersectsBox(Second2BB1))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_14.intersectsBox(Second2BB1))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_15.intersectsBox(Second2BB1))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_16.intersectsBox(Second2BB1))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_17.intersectsBox(Second2BB1))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_18.intersectsBox(Second2BB1))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_19.intersectsBox(Second2BB1))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_20.intersectsBox(Second2BB1))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_21.intersectsBox(Second2BB1))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_22.intersectsBox(Second2BB1))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_23.intersectsBox(Second2BB1))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_24.intersectsBox(Second2BB1))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_25.intersectsBox(Second2BB1))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_26.intersectsBox(Second2BB1))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_27.intersectsBox(Second2BB1))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_28.intersectsBox(Second2BB1))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_29.intersectsBox(Second2BB1))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_30.intersectsBox(Second2BB1))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_31.intersectsBox(Second2BB1))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_32.intersectsBox(Second2BB1))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+		
+				 if (first2BB_1.intersectsBox(Second2BB2))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_2.intersectsBox(Second2BB2))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_3.intersectsBox(Second2BB2))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_4.intersectsBox(Second2BB2))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_5.intersectsBox(Second2BB2))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_6.intersectsBox(Second2BB2))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_7.intersectsBox(Second2BB2))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_8.intersectsBox(Second2BB2))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_9.intersectsBox(Second2BB2))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_10.intersectsBox(Second2BB2))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_11.intersectsBox(Second2BB2))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_12.intersectsBox(Second2BB2))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_13.intersectsBox(Second2BB2))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_14.intersectsBox(Second2BB2))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_15.intersectsBox(Second2BB2))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_16.intersectsBox(Second2BB2))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_17.intersectsBox(Second2BB2))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_18.intersectsBox(Second2BB2))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_19.intersectsBox(Second2BB2))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_20.intersectsBox(Second2BB2))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_21.intersectsBox(Second2BB2))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_22.intersectsBox(Second2BB2))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_23.intersectsBox(Second2BB2))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_24.intersectsBox(Second2BB2))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_25.intersectsBox(Second2BB2))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_26.intersectsBox(Second2BB2))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_27.intersectsBox(Second2BB2))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_28.intersectsBox(Second2BB2))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_29.intersectsBox(Second2BB2))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_30.intersectsBox(Second2BB2))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_31.intersectsBox(Second2BB2))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+			 if (first2BB_32.intersectsBox(Second2BB2))
+				 {
+				 player.handler.translateZ(Vcolision);	
+				 }
+		
+		}*/
+		
+		}
+		if(escenaro3)
+			{
+				const P1 =scene.getObjectByName('Jugador');
+				const CC1 =scene.getObjectByName('CC1');
+		
+				var VelGiro=.003
+				CC1.rotation.y+=VelGiro;
+		
+				const S_3 = scene.getObjectByName('Suelo3');
+				const S_4 = scene.getObjectByName('Suelo4');
+				const S_5 = scene.getObjectByName('Suelo5');
+				const S_6 = scene.getObjectByName('Suelo6');
+				const S_7 = scene.getObjectByName('Suelo7');
+				const S_8 = scene.getObjectByName('Suelo8');
+				const S_9 = scene.getObjectByName('Suelo9');
+				const S_10 = scene.getObjectByName('Suelo10');
+				const S_11 = scene.getObjectByName('Suelo11');
+				const S_12= scene.getObjectByName('Suelo12');
+				const S_13 = scene.getObjectByName('Suelo13');
+				const S_14 = scene.getObjectByName('Suelo14');
+				const T_1 = scene.getObjectByName('T1');
+				const T_2 = scene.getObjectByName('T2');
+				const T_3 = scene.getObjectByName('T3');
+				const T_4 = scene.getObjectByName('T4');
+				const T_5 = scene.getObjectByName('T5');
+				const T_6 = scene.getObjectByName('T6');
+				const T_7 = scene.getObjectByName('T7');
+				const T_8 = scene.getObjectByName('T8');
+				const T_9 = scene.getObjectByName('T9');
+				const T_10 = scene.getObjectByName('T10');
+				const T_11 = scene.getObjectByName('T11');
+				const T_12 = scene.getObjectByName('T12');
+				const T_13 = scene.getObjectByName('T13');
+				const T_14 = scene.getObjectByName('T14');
+				const T_15 = scene.getObjectByName('T15');
+				const T_16 = scene.getObjectByName('T16');
+				const T_17 = scene.getObjectByName('T17');
+				const T_18 = scene.getObjectByName('T18');
+				const T_19 = scene.getObjectByName('T19');
+				const T_20 = scene.getObjectByName('T20');
+				const T_21 = scene.getObjectByName('T21');
+				const T_22 = scene.getObjectByName('T22');
+				const T_23 = scene.getObjectByName('T23');
+				const T_24 = scene.getObjectByName('T24');
+				const J_C = scene.getObjectByName('ControladorJefe');
+		
+		
+					if(S_3 && P1 && T_1)
+					{
+						var Second2BB = new THREE.Box3().setFromObject(P1);
+						var first3BB_3 = new THREE.Box3().setFromObject(S_3);
+						var first3BB_4 = new THREE.Box3().setFromObject(S_4);
+						var first3BB_5 = new THREE.Box3().setFromObject(S_5);
+						var first3BB_6 = new THREE.Box3().setFromObject(S_6);
+						var first3BB_7 = new THREE.Box3().setFromObject(S_7);
+						var first3BB_8 = new THREE.Box3().setFromObject(S_8);
+						var first3BB_9 = new THREE.Box3().setFromObject(S_9);
+						var first3BB_10 = new THREE.Box3().setFromObject(S_10);
+						var first3BB_11 = new THREE.Box3().setFromObject(S_11);
+						var first3BB_12 = new THREE.Box3().setFromObject(S_12);
+						var first3BB_13 = new THREE.Box3().setFromObject(S_13);
+						var first3BB_14 = new THREE.Box3().setFromObject(S_14);
+						var first3BBT_1 = new THREE.Box3().setFromObject(T_1);
+						var first3BBT_2 = new THREE.Box3().setFromObject(T_2);
+						var first3BBT_3 = new THREE.Box3().setFromObject(T_3);
+						var first3BBT_4 = new THREE.Box3().setFromObject(T_4);
+						var first3BBT_5 = new THREE.Box3().setFromObject(T_5);
+						var first3BBT_6 = new THREE.Box3().setFromObject(T_6);
+						var first3BBT_7 = new THREE.Box3().setFromObject(T_7);
+						var first3BBT_8 = new THREE.Box3().setFromObject(T_8);
+						var first3BBT_9 = new THREE.Box3().setFromObject(T_9);
+						var first3BBT_10 = new THREE.Box3().setFromObject(T_10);
+						var first3BBT_11 = new THREE.Box3().setFromObject(T_11);
+						var first3BBT_12 = new THREE.Box3().setFromObject(T_12);
+						var first3BBT_13 = new THREE.Box3().setFromObject(T_13);
+						var first3BBT_14 = new THREE.Box3().setFromObject(T_14);
+						var first3BBT_15 = new THREE.Box3().setFromObject(T_15);
+						var first3BBT_16 = new THREE.Box3().setFromObject(T_16);
+						var first3BBT_17 = new THREE.Box3().setFromObject(T_17);
+						var first3BBT_18 = new THREE.Box3().setFromObject(T_18);
+						var first3BBT_19 = new THREE.Box3().setFromObject(T_19);
+						var first3BBT_20 = new THREE.Box3().setFromObject(T_20);
+						var first3BBT_21 = new THREE.Box3().setFromObject(T_21);
+						var first3BBT_22 = new THREE.Box3().setFromObject(T_22);
+						var first3BBT_23 = new THREE.Box3().setFromObject(T_23);
+						var first3BBT_24 = new THREE.Box3().setFromObject(T_24);
+						var first3BBJ = new THREE.Box3().setFromObject(J_C);
+		
+		
+		
+						if (first3BB_3.intersectsBox(Second2BB))
+						{
+						player.handler.translateZ(Vcolision);	
+						}
+						if (first3BB_4.intersectsBox(Second2BB))
+						{
+						player.handler.translateZ(Vcolision);	
+						}
+						if (first3BB_5.intersectsBox(Second2BB))
+						{
+						player.handler.translateZ(Vcolision);	
+						}
+						if (first3BB_6.intersectsBox(Second2BB))
+						{
+						player.handler.translateZ(Vcolision);	
+						}
+						if (first3BB_7.intersectsBox(Second2BB))
+						{
+						player.handler.translateZ(Vcolision);	
+						}
+						if (first3BB_8.intersectsBox(Second2BB))
+						{
+						player.handler.translateZ(Vcolision);	
+						}
+						if (first3BB_9.intersectsBox(Second2BB))
+						{
+						player.handler.translateZ(Vcolision);	
+						}
+						if (first3BB_10.intersectsBox(Second2BB))
+						{
+						player.handler.translateZ(Vcolision);	
+						}
+						if (first3BB_11.intersectsBox(Second2BB))
+						{
+						player.handler.translateZ(Vcolision);	
+						}
+						if (first3BB_12.intersectsBox(Second2BB))
+						{
+						player.handler.translateZ(Vcolision);	
+						}
+						if (first3BB_13.intersectsBox(Second2BB))
+						{
+						player.handler.translateZ(Vcolision);	
+						}
+						if (first3BB_14.intersectsBox(Second2BB))
+						{
+						player.handler.translateZ(Vcolision);	
+						}
+						if (first3BBT_1.intersectsBox(Second2BB))
+						{
+						player.handler.translateZ(Vcolision);	
+						}
+						if (first3BBT_2.intersectsBox(Second2BB))
+						{
+						player.handler.translateZ(Vcolision);	
+						}
+						if (first3BBT_3.intersectsBox(Second2BB))
+						{
+						player.handler.translateZ(Vcolision);	
+						}
+						if (first3BBT_4.intersectsBox(Second2BB))
+						{
+						player.handler.translateZ(Vcolision);	
+						}
+						if (first3BBT_5.intersectsBox(Second2BB))
+						{
+						player.handler.translateZ(Vcolision);	
+						}
+						if (first3BBT_6.intersectsBox(Second2BB))
+						{
+						player.handler.translateZ(Vcolision);	
+						}
+						if (first3BBT_7.intersectsBox(Second2BB))
+						{
+						player.handler.translateZ(Vcolision);	
+						}
+						if (first3BBT_8.intersectsBox(Second2BB))
+						{
+						player.handler.translateZ(Vcolision);	
+						}
+						if (first3BBT_9.intersectsBox(Second2BB))
+						{
+						player.handler.translateZ(Vcolision);	
+						}
+						if (first3BBT_10.intersectsBox(Second2BB))
+						{
+						player.handler.translateZ(Vcolision);	
+						}
+						if (first3BBT_11.intersectsBox(Second2BB))
+						{
+						player.handler.translateZ(Vcolision);	
+						}
+						if (first3BBT_12.intersectsBox(Second2BB))
+						{
+						player.handler.translateZ(Vcolision);	
+						}
+						if (first3BBT_13.intersectsBox(Second2BB))
+						{
+						player.handler.translateZ(Vcolision);	
+						}
+						if (first3BBT_14.intersectsBox(Second2BB))
+						{
+						player.handler.translateZ(Vcolision);	
+						}
+						if (first3BBT_15.intersectsBox(Second2BB))
+						{
+						player.handler.translateZ(Vcolision);	
+						}
+						if (first3BBT_16.intersectsBox(Second2BB))
+						{
+						player.handler.translateZ(Vcolision);	
+						}
+						if (first3BBT_17.intersectsBox(Second2BB))
+						{
+						player.handler.translateZ(Vcolision);	
+						}
+						if (first3BBT_18.intersectsBox(Second2BB))
+						{
+						player.handler.translateZ(Vcolision);	
+						}
+						if (first3BBT_19.intersectsBox(Second2BB))
+						{
+						player.handler.translateZ(Vcolision);	
+						}
+						if (first3BBT_20.intersectsBox(Second2BB))
+						{
+						player.handler.translateZ(Vcolision);	
+						}
+						if (first3BBT_21.intersectsBox(Second2BB))
+						{
+						player.handler.translateZ(Vcolision);	
+						}
+						if (first3BBT_22.intersectsBox(Second2BB))
+						{
+						player.handler.translateZ(Vcolision);	
+						}
+						if (first3BBT_23.intersectsBox(Second2BB))
+						{
+						player.handler.translateZ(Vcolision);	
+						}
+						if (first3BBT_24.intersectsBox(Second2BB))
+						{
+						player.handler.translateZ(Vcolision);	
+						}
+						if (first3BBJ.intersectsBox(Second2BB))
+						{
+						player.handler.translateZ(Vcolision);	
+						}
+		
+					}
+		
+		}
+			deltaTime = clock.getDelta();
+			if(loadedAssets>=12){
+				onUpdateSingle(deltaTime);
+			//checkForTarget();
+				const time = performance.now() * 0.001;	
+				var Wat= scene.getObjectByName("Awita");
+				Wat.material.uniforms[ 'time' ].value += 1.0 / 60.0;
+				renderer.render(scene,camera);
+			}
+		}
+		
 
 
 }
 function renderTwo(){
 		requestAnimationFrame(renderTwo);
-		deltaTime = clock.getDelta();
+		if(isPaused){
+			clock.stop();
+			if(keys['R']){
+				isPaused=false;
+				clock.start();
+			
+			}
+		}else{
+			if(escenario2){
+				const P2 =scene.getObjectByName('Jugador1');
+				const P3 =scene.getObjectByName('Jugador2');
+				var Second2BB1 = new THREE.Box3().setFromObject(P2);
+				var Second2BB2 = new THREE.Box3().setFromObject(P3);
 
-		if(loadedAssets>=4){
-			onUpdateMulti(deltaTime);
-			//var heightTest=getYonTerrain(players[0],rayFloor,miplanito);
-			renderers[0].render(scene, cameras[0]);
-			renderers[1].render(scene, cameras[1]);
-		}
+					const CO2_1 = scene.getObjectByName('2Muro1');
+					const CO2_2 = scene.getObjectByName('2Muro2');
+					const CO2_3 = scene.getObjectByName('2Muro3');
+					const CO2_4 = scene.getObjectByName('2Muro4');
+					const CO2_5 = scene.getObjectByName('2Muro5');
+					const CO2_6 = scene.getObjectByName('2Muro6');
+					const CO2_7 = scene.getObjectByName('2Muro7');
+					const CO2_8 = scene.getObjectByName('2Muro8');
+					const CO2_9 = scene.getObjectByName('2Muro9');
+					const CO2_10 = scene.getObjectByName('2Muro10');
+					const CO2_11 = scene.getObjectByName('2Muro11');
+					const CO2_12 = scene.getObjectByName('2Muro12');
+					const CO2_13 = scene.getObjectByName('2Muro13');
+					const CO2_14 = scene.getObjectByName('2Muro14');
+					const CO2_15 = scene.getObjectByName('2Muro15');
+					const CO2_16 = scene.getObjectByName('2Muro16');
+					const CO2_17 = scene.getObjectByName('2Muro17');
+					const CO2_18 = scene.getObjectByName('2Muro18');
+					const CO2_19 = scene.getObjectByName('2Muro19');
+					const CO2_20 = scene.getObjectByName('2Muro20');
+					const CO2_21 = scene.getObjectByName('2Muro21');
+					const CO2_22 = scene.getObjectByName('2Muro22');
+					const CO2_23 = scene.getObjectByName('2Muro23');
+					const CO2_24 = scene.getObjectByName('2Muro24');
+					const CO2_25 = scene.getObjectByName('2Muro25');
+					const CO2_26 = scene.getObjectByName('2Muro26');
+					const CO2_27 = scene.getObjectByName('2Muro27');
+					const CO2_28 = scene.getObjectByName('2Muro28');
+					const CO2_29 = scene.getObjectByName('2Muro29');
+					const CO2_30 = scene.getObjectByName('2Muro30');
+					const CO2_31 = scene.getObjectByName('2Muro31');
+					const CO2_32 = scene.getObjectByName('2Muro32');
+					if(CO2_1 &&P2 &&P3){
+						var Second2BB1 = new THREE.Box3().setFromObject(P2);
+						var Second2BB2 = new THREE.Box3().setFromObject(P3);
+					
+						var first2BB_1 = new THREE.Box3().setFromObject(CO2_1);
+						var first2BB_2 = new THREE.Box3().setFromObject(CO2_2);
+						var first2BB_3 = new THREE.Box3().setFromObject(CO2_3);
+						var first2BB_4 = new THREE.Box3().setFromObject(CO2_4);
+						var first2BB_5 = new THREE.Box3().setFromObject(CO2_5);
+						var first2BB_6 = new THREE.Box3().setFromObject(CO2_6);
+						var first2BB_7 = new THREE.Box3().setFromObject(CO2_7);
+						var first2BB_8 = new THREE.Box3().setFromObject(CO2_8);
+						var first2BB_9 = new THREE.Box3().setFromObject(CO2_9);
+						var first2BB_10 = new THREE.Box3().setFromObject(CO2_10);
+						var first2BB_11 = new THREE.Box3().setFromObject(CO2_11);
+						var first2BB_12 = new THREE.Box3().setFromObject(CO2_12);
+						var first2BB_13 = new THREE.Box3().setFromObject(CO2_13);
+						var first2BB_14 = new THREE.Box3().setFromObject(CO2_14);
+						var first2BB_15 = new THREE.Box3().setFromObject(CO2_15);
+						var first2BB_16 = new THREE.Box3().setFromObject(CO2_16);
+						var first2BB_17 = new THREE.Box3().setFromObject(CO2_17);
+						var first2BB_18 = new THREE.Box3().setFromObject(CO2_18);
+						var first2BB_19 = new THREE.Box3().setFromObject(CO2_19);
+						var first2BB_20 = new THREE.Box3().setFromObject(CO2_20);
+						var first2BB_21 = new THREE.Box3().setFromObject(CO2_21);
+						var first2BB_22 = new THREE.Box3().setFromObject(CO2_22);
+						var first2BB_23 = new THREE.Box3().setFromObject(CO2_23);
+						var first2BB_24 = new THREE.Box3().setFromObject(CO2_24);
+						var first2BB_25 = new THREE.Box3().setFromObject(CO2_25);
+						var first2BB_26 = new THREE.Box3().setFromObject(CO2_26);
+						var first2BB_27 = new THREE.Box3().setFromObject(CO2_27);
+						var first2BB_28 = new THREE.Box3().setFromObject(CO2_28);
+						var first2BB_29 = new THREE.Box3().setFromObject(CO2_29);
+						var first2BB_30 = new THREE.Box3().setFromObject(CO2_30);
+						var first2BB_31 = new THREE.Box3().setFromObject(CO2_31);
+						var first2BB_32= new THREE.Box3().setFromObject(CO2_32);
+					//separacion colisiones con enemigo
+					if(localStorageInfo.typeOfPlayer=="Druida"){
+						var EnemyB1= new THREE.Box3().setFromObject(EB1);
+						var EnemyB2= new THREE.Box3().setFromObject(EB2);
+						var EnemyB3= new THREE.Box3().setFromObject(EB3);
+						var EnemyB4= new THREE.Box3().setFromObject(EB4);
+						var EnemyB5= new THREE.Box3().setFromObject(EB5);
+						var EnemyB6= new THREE.Box3().setFromObject(EB6);
+						var EnemyB7= new THREE.Box3().setFromObject(EB7);
+						//player 1
+						if (EnemyB1.intersectsBox(Second2BB1)||EnemyB2.intersectsBox(Second2BB1)||EnemyB3.intersectsBox(Second2BB1)
+						||EnemyB4.intersectsBox(Second2BB1)||EnemyB5.intersectsBox(Second2BB1)||EnemyB6.intersectsBox(Second2BB1)
+						||EnemyB7.intersectsBox(Second2BB1))
+						{
+							Vcolision= (players[0].forward * deltaTime*-1 )-.7;
+							players[0].handler.translateZ(Vcolision);
+							killPlayer(players[0]);	
+						}
+						//player2
+						if (EnemyB1.intersectsBox(Second2BB2)||EnemyB2.intersectsBox(Second2BB2)||EnemyB3.intersectsBox(Second2BB2)
+						||EnemyB4.intersectsBox(Second2BB2)||EnemyB5.intersectsBox(Second2BB2)||EnemyB6.intersectsBox(Second2BB2)
+						||EnemyB7.intersectsBox(Second2BB2))
+						{
+							Vcolision= (players[1].forward * deltaTime*-1 )-.7;
+							players[1].handler.translateZ(Vcolision);
+							killPlayer(players[1]);		
+						}
+						
+					}
+					//separacion colisiones con escenario
+					//player 1
+					if (first2BB_1.intersectsBox(Second2BB1)||first2BB_2.intersectsBox(Second2BB1)||first2BB_3.intersectsBox(Second2BB1)
+					||first2BB_4.intersectsBox(Second2BB1)||first2BB_5.intersectsBox(Second2BB1)||first2BB_6.intersectsBox(Second2BB1)
+					||first2BB_7.intersectsBox(Second2BB1)|| first2BB_8.intersectsBox(Second2BB1)||first2BB_9.intersectsBox(Second2BB1)
+					||first2BB_10.intersectsBox(Second2BB1)||first2BB_11.intersectsBox(Second2BB1)||first2BB_12.intersectsBox(Second2BB1)
+					||first2BB_13.intersectsBox(Second2BB1)||first2BB_14.intersectsBox(Second2BB1)||first2BB_15.intersectsBox(Second2BB1)
+					||first2BB_16.intersectsBox(Second2BB1)||first2BB_17.intersectsBox(Second2BB1)|| first2BB_18.intersectsBox(Second2BB1)
+					||first2BB_19.intersectsBox(Second2BB1)||first2BB_20.intersectsBox(Second2BB1)||first2BB_21.intersectsBox(Second2BB1)||first2BB_22.intersectsBox(Second2BB1)
+					||first2BB_23.intersectsBox(Second2BB1)||first2BB_24.intersectsBox(Second2BB1)||first2BB_25.intersectsBox(Second2BB1)
+					||first2BB_26.intersectsBox(Second2BB1)||first2BB_27.intersectsBox(Second2BB1)|| first2BB_28.intersectsBox(Second2BB1)
+					||first2BB_29.intersectsBox(Second2BB1)||first2BB_30.intersectsBox(Second2BB1)||first2BB_31.intersectsBox(Second2BB1)||first2BB_32.intersectsBox(Second2BB1))
+					{
+						Vcolision= (players[0].forward * deltaTime*-1 )-.7;
+						players[0].handler.translateZ(Vcolision);
+					}
+					
+					//player 2
+					if (first2BB_1.intersectsBox(Second2BB2)||first2BB_2.intersectsBox(Second2BB2)||first2BB_3.intersectsBox(Second2BB2)
+					||first2BB_4.intersectsBox(Second2BB2)||first2BB_5.intersectsBox(Second2BB2)||first2BB_6.intersectsBox(Second2BB2)
+					||first2BB_7.intersectsBox(Second2BB2)|| first2BB_8.intersectsBox(Second2BB2)||first2BB_9.intersectsBox(Second2BB2)
+					||first2BB_10.intersectsBox(Second2BB2)||first2BB_11.intersectsBox(Second2BB2)||first2BB_12.intersectsBox(Second2BB2)
+					||first2BB_13.intersectsBox(Second2BB2)||first2BB_14.intersectsBox(Second2BB2)||first2BB_15.intersectsBox(Second2BB2)
+					||first2BB_16.intersectsBox(Second2BB2)||first2BB_17.intersectsBox(Second2BB2)|| first2BB_18.intersectsBox(Second2BB2)
+					||first2BB_19.intersectsBox(Second2BB2)||first2BB_20.intersectsBox(Second2BB2)||first2BB_21.intersectsBox(Second2BB2)||first2BB_22.intersectsBox(Second2BB2)
+					||first2BB_23.intersectsBox(Second2BB2)||first2BB_24.intersectsBox(Second2BB2)||first2BB_25.intersectsBox(Second2BB2)
+					||first2BB_26.intersectsBox(Second2BB2)||first2BB_27.intersectsBox(Second2BB2)|| first2BB_28.intersectsBox(Second2BB2)
+					||first2BB_29.intersectsBox(Second2BB2)||first2BB_30.intersectsBox(Second2BB2)||first2BB_31.intersectsBox(Second2BB2)||first2BB_32.intersectsBox(Second2BB2))
+					{	Vcolision= (players[1].forward * deltaTime*-1 )-.7;
+						players[1].handler.translateZ(Vcolision);
+					}
+				
+				}
+			}
+			requestAnimationFrame(renderTwo);
+			deltaTime = clock.getDelta();
+
+			if(loadedAssets>=12){
+				onUpdateMulti(deltaTime);
+				const time = performance.now() * 0.001;	
+				var Wat= scene.getObjectByName("Awita");
+				Wat.material.uniforms[ 'time' ].value += 1.0 / 60.0;
+				
+				renderers[0].render(scene, cameras[0]);
+				renderers[1].render(scene, cameras[1]);
+			}
+	}
 }
 function onKeyDown(event) {
 	keys[String.fromCharCode(event.keyCode)] = true;
@@ -2624,11 +4174,15 @@ function onKeyUp(event) {
 
 document.addEventListener('keydown', onKeyDown);
 document.addEventListener('keyup', onKeyUp);	
+
 onStart();
 
 window.addEventListener("mousemove", onmousemove, false);
 
 
+if(localStorageInfo.gameMode=="Solitario"){
+	render();
+}else{
+	renderTwo();
+}
 
-render();
-//renderTwo();

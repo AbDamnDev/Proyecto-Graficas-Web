@@ -4,6 +4,7 @@
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="CSS/stylePuntuaciones.css">
+	<script type="text/javascript" src="JS/libs/jquery-3.6.0.min.js"></script>
 	<title>Puntuaciones más altas</title>
 </head>
 <body>
@@ -24,23 +25,192 @@
         position: absolute;
         transform: translate(-50%, -50%);">
 	<div >
+		<form method="post" id="form">
+
+			<label for="modos">Modo de Juego:</label>
+			<select id="modos" name="gameMode">
+			  <option value="Solitario">Solitario</option>
+			  <option value="Multijugador">Multijugador</option>
+			</select>
+	
+			  <label for="jugador">Tipo de Jugador:</label>
+			<select id="jugador" name="typePlayer">
+			  <option value="Druida">Druida</option>
+			  <option value="Leshy">Leshy</option>
+			</select>
+			  
+	
+			  <label for="nivel">Nivel:</label>
+			<select id="nivel" name="level">
+			  <option value="1">1</option>
+			  <option value="2">2</option>
+			  <option value="3">3</option>
+			</select>
+			  <input type="submit">
+	
+			</form>
+
+		<div class="dt_usuario" id="dt_usuario"> </div>
+			
+		
 		<button onclick="window.location = 'index.html'"  class="btn_puntuacionesSalirMenu">Salir al menu</button>
-		<ol>
-
-			<li class="dt_usuario"> </li>
-			
-			<li>  </li>
-			
-			<li>  </li>
-			
-			</ol>
 	</div>
+</div>
 <script>
-	$(document).on("ready", function(){
+	$(document).ready(function(){
+		getScores();
+		$('#form').submit(function(e){
+			e.preventDefault();
+			var form = document.getElementById('form');
+			var formData = new FormData(form);
+			formData.append('accion','getScores');
+			$.ajax({
+				async:false,
+				url     : "./php/service_include.php",
+				method  : "POST",
+				data    : formData,
+				contentType:false,
+				cache:false,
+				processData: false
+			}).done(function (data, textEstado, jqXHR){
+				data=$.parseJSON(data);
+				if(data.result=="true"){
+					//enviar los datos a la pagina
+					info=data.queries;
+					if (info.length>0){
+						col=new Array('Nombre del jugador','Duración de la partida','Fecha de la partida','Puntuación');
 
+						var table = document.createElement("table");
+
+						var tr = table.insertRow(-1); 
+
+						for (var i = 0; i < col.length; i++) {
+							var th = document.createElement("th");      // TABLE HEADER.
+							th.innerHTML = col[i];
+							tr.appendChild(th);
+						}
+						for (var i = 0; i < info.length; i++) {
+
+							tr = table.insertRow(-1);
+
+							for (var j = 0; j < col.length; j++) {
+								var tabCell = tr.insertCell(-1);
+								switch(j){
+									case 0:{
+										tabCell.innerHTML = info[i].nombreJugador;
+										break;
+									}
+									case 1:{
+										tabCell.innerHTML = info[i].duracion;
+										break;
+									}
+									case 2:{
+										tabCell.innerHTML = info[i].fecha;
+										break;
+									}
+									case 3:{
+										tabCell.innerHTML = info[i].puntuacion;
+										break;
+									}
+								}
+							
+							}
+						}
+						var divContainer = document.getElementById("dt_usuario");
+						divContainer.innerHTML="";
+						divContainer.appendChild(table);
+					}else{
+						$('#dt_usuario').innerHTML("No hay resultados para esta busqueda");
+					}
+					
+				
+				}else{
+					alert("No se han encontrado resultados con estos filtros");
+				}
+			
+			}).fail(function (data, textEstado, jqXHR){
+				alert("la solicitud fallos porque: " + textEstado);
+				console.log("la solicitud fallos porque: " + textEstado);
+			});
+		});
 	});
+	function getScores(){ //al final este ajax lo voyy a dejar solito en un evento onsubmit
+		
+    var formData = new FormData();
+		formData.append('typePlayer','Druida');
+        formData.append('level',1);
+        formData.append('gameMode','Solitario');
+		formData.append('accion','getScores');
+    $.ajax({
+        async:false,
+        url     : "./php/service_include.php",
+        method  : "POST",
+        data    : formData,
+        contentType:false,
+        cache:false,
+        processData: false
+    }).done(function (data, textEstado, jqXHR){
+        data=$.parseJSON(data);
+        if(data.result=="true"){
+            //enviar los datos a la pagina
+            info=data.queries;
+			if (info.length>0){
+				col=new Array('Nombre del jugador','Duración de la partida','Fecha de la partida','Puntuación');
 
-	var lista = function(){
+				var table = document.createElement("table");
+
+				var tr = table.insertRow(-1); 
+
+				for (var i = 0; i < col.length; i++) {
+					var th = document.createElement("th");      // TABLE HEADER.
+					th.innerHTML = col[i];
+					tr.appendChild(th);
+        		}
+				for (var i = 0; i < info.length; i++) {
+
+					tr = table.insertRow(-1);
+
+					for (var j = 0; j < col.length; j++) {
+						var tabCell = tr.insertCell(-1);
+						switch(j){
+							case 0:{
+								tabCell.innerHTML = info[i].nombreJugador;
+								break;
+							}
+							case 1:{
+								tabCell.innerHTML = info[i].duracion;
+								break;
+							}
+							case 2:{
+								tabCell.innerHTML = info[i].fecha;
+								break;
+							}
+							case 3:{
+								tabCell.innerHTML = info[i].puntuacion;
+								break;
+							}
+						}
+					
+					}
+				}
+				var divContainer = document.getElementById("dt_usuario");
+        		divContainer.innerHTML="";
+        		divContainer.appendChild(table);
+			}else{
+				$('#dt_usuario').innerHTML("No hay resultados para esta busqueda");
+			}
+			
+           
+        }else{
+            alert("No se pudo actualizar la informacion del jugador");
+        }
+       
+    }).fail(function (data, textEstado, jqXHR){
+        alert("la solicitud fallos porque: " + textEstado);
+        console.log("la solicitud fallos porque: " + textEstado);
+    });
+}
+	/*var lista = function(){
 		var table = $("#dt_usuario").DataTable({
 			"ajax":{
 				"method":"POST",
@@ -52,7 +222,7 @@
 				{"data":"nombreUsuario"},
 			]
 		});
-	}
+	}*/
 </script>
 
 </body>

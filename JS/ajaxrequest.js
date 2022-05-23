@@ -39,3 +39,34 @@ function insertarJugador(){
     }
     
 }
+function getScores(){
+    var formData = new FormData();
+		formData.append('typePlayer','Druida');
+        formData.append('level',1);
+        formData.append('gameMode','Multijugador');
+    $.ajax({
+        async:false,
+        url     : "./php/service_include.php",
+        method  : "POST",
+        data    : formData,
+        contentType:false,
+        cache:false,
+        processData: false
+    }).done(function (data, textEstado, jqXHR){
+        data=$.parseJSON(data);
+        if(data.result){
+            //enviar los datos a la pagina
+            
+           
+        }else{
+            alert("No se pudo actualizar la informacion del jugador");
+        }
+       
+    }).fail(function (data, textEstado, jqXHR){
+        alert("la solicitud fallos porque: " + textEstado);
+        console.log("la solicitud fallos porque: " + textEstado);
+    });
+}
+function actualizarJugador(){
+
+}

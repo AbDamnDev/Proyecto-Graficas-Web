@@ -11,7 +11,7 @@
 
 body {
     width: 100vw;
-    height: 80vh;
+    height: 100vh;
     font-family: Verdana, Geneva, Tahoma, sans-serif;
     display: flex;
     align-items: center;
@@ -19,11 +19,20 @@ body {
     background-color:black;
     background-image: url("GAMEOVER.png");
     background-repeat: no-repeat;
-    background-size: 990px 950px;
+    background-size: contain;
     background-position: 50% 5%;
   }
 
   button {
+    /*background-color: transparent;
+    font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+    font-size:x-large;
+    border: 2px solid;
+    border-radius: 10px;
+    cursor: pointer;
+    margin: 2px 2px;
+    padding: 1.2rem 2.8rem;
+    color: var(--color-white);*/
     background-color: transparent;
     font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
     font-size:x-large;

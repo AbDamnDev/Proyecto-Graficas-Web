@@ -4,18 +4,25 @@
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="CSS/stylevictory.css">
+	<script type="text/javascript" src="JS/libs/jquery-3.6.0.min.js"></script>
 	<title> Victory </title>
 </head>
 <body>
-<p>Esta pagina es pa la victoria. Se muestra diferente dependiendo de si seleccionamos ser jugador normal o monstruo. Para eso accedemos a lo que se almacenó en el localStorage</p>
 <div style="top:85%;
 	left:50%;
 	position: absolute;
 	transform: translate(-50%, -50%);">
 
 <div class="input_table">
+	<div ><p id="score">Score:</p> </div>
 	<center><button onclick="window.location = 'index.html'" class="btn_victoryMenu">Salir al Menu</button></center>
 </div>
 </div>
 </body>
+<script>
+	if (localStorage["score"]){
+		$('p#score').text("Score: "+localStorage.getItem('score'));
+		localStorage.clear();
+	}
+</script>
 </html>

@@ -1,0 +1,18 @@
+body { 
+margin: 0; 
+}
+.modal{    
+    display: none;
+    width: 80%;
+    padding: 10px 20px;
+    margin: auto;
+    position: fixed;
+    justify-content: center;
+    top: 10%;
+    left: 15%;
+    backdrop-filter: blur(10px); /*no parece ser reconocido*/
+    background-color: rgba(0, 128, 255, 0.5);
+    
+    border-radius: 20px;   
+    
+}

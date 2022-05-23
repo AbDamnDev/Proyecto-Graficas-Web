@@ -1,86 +1,99 @@
 :root {
-    --color-white: #fff;
-    --color-red: #d3cc70;
-  }
-  
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
- }
- body {
-  width: 100vw;
-  height: 115vh;
-  font-family: Verdana, Geneva, Tahoma, sans-serif;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color:black;
-  background-image: url("MENU.jpg");
-  background-repeat: no-repeat;
-  background-size: 1925px 950px;
-  }
+  --color-white: #fff;
+  --color-red: #102C54;
+}
 
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+body {
+width: 100%;
+height: calc(100vw * 9 / 16);
+font-family: Verdana, Geneva, Tahoma, sans-serif;
+display: flex;
+align-items: center;
+justify-content: center;
+background-size:contain;
+background-color: black;
+}
+video {
+width: 100%;
+height: calc(100vw * 9 / 16);
+}
+
+.rightsec{
+  background: transparent;
+  position:absolute;
+  top: 20%;
+  width: 25%;
+  height: 65%;
+  right: 38%;
+  z-index: 1;  
+  border: 5px solid #c0c0c0;
+  display: inline-grid;
+  place-items: center;
+
+}
 
 button {
-    background-color: transparent;
-    font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
-    font-size:x-large;
-    border: 2px solid;
-    border-radius: 10px;
-    cursor: pointer;
-    margin: 2px 2px;
-    padding: 1.2rem 2.8rem;
-    color: var(--color-white);
-  }
+  background-color: transparent;
+  font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+  font-size:x-large;
+  border: 2px solid;
+  border-radius: 10px;
+  cursor: pointer;
+  margin: 2px 2px;
+  padding: 1.2rem 2.8rem;
+  color: var(--color-white);
+}
 
-  button:focus {
-    outline: 0;
-  }
+button:focus {
+  outline: 0;
+}
 
 .btn_juego {
-    border-color: var(--color-red);
-    box-shadow: 0 0 40px 40px var(--color-red) inset;
-    transition: box-shadow 0.2s ease-in-out;
-  }
-  .btn_juego:hover {
-    box-shadow: 0 0 10px 0 var(--color-red) inset, 0 0 10px 4px var(--color-red);
-  }
+  border-color: var(--color-red);
+  box-shadow: 0 0 40px 40px var(--color-red) inset;
+  transition: box-shadow 0.2s ease-in-out;
+}
+.btn_juego:hover {
+  box-shadow: 0 0 10px 0 var(--color-red) inset, 0 0 10px 4px var(--color-red);
+}
 
 .btn_modojuego {
-    border-color: var(--color-red);
-    box-shadow: 0 0 40px 40px var(--color-red) inset;
-    transition: box-shadow 0.2s ease-in-out;
-  }
-  .btn_modojuego:hover {
-    box-shadow: 0 0 10px 0 var(--color-red) inset, 0 0 10px 4px var(--color-red);
-  }
+  border-color: var(--color-red);
+  box-shadow: 0 0 40px 40px var(--color-red) inset;
+  transition: box-shadow 0.2s ease-in-out;
+}
+.btn_modojuego:hover {
+  box-shadow: 0 0 10px 0 var(--color-red) inset, 0 0 10px 4px var(--color-red);
+}
 
-  .btn_configuraciones {
-    border-color: var(--color-red);
-    box-shadow: 0 0 40px 40px var(--color-red) inset;
-    transition: box-shadow 0.2s ease-in-out;
-  }
-  .btn_configuraciones:hover {
-    box-shadow: 0 0 10px 0 var(--color-red) inset, 0 0 10px 4px var(--color-red);
-  }
+.btn_configuraciones {
+  border-color: var(--color-red);
+  box-shadow: 0 0 40px 40px var(--color-red) inset;
+  transition: box-shadow 0.2s ease-in-out;
+}
+.btn_configuraciones:hover {
+  box-shadow: 0 0 10px 0 var(--color-red) inset, 0 0 10px 4px var(--color-red);
+}
 
-  .btn_creditos {
-    border-color: var(--color-red);
-    box-shadow: 0 0 40px 40px var(--color-red) inset;
-    transition: box-shadow 0.2s ease-in-out;
-  }
-  .btn_creditos:hover {
-    box-shadow: 0 0 10px 0 var(--color-red) inset, 0 0 10px 4px var(--color-red);
-  }
+.btn_creditos {
+  border-color: var(--color-red);
+  box-shadow: 0 0 40px 40px var(--color-red) inset;
+  transition: box-shadow 0.2s ease-in-out;
+}
+.btn_creditos:hover {
+  box-shadow: 0 0 10px 0 var(--color-red) inset, 0 0 10px 4px var(--color-red);
+}
 
-  .btn_puntuaciones {
-    border-color: var(--color-red);
-    box-shadow: 0 0 40px 40px var(--color-red) inset;
-    transition: box-shadow 0.2s ease-in-out;
-  }
-  .btn_puntuaciones:hover {
-    box-shadow: 0 0 10px 0 var(--color-red) inset, 0 0 10px 4px var(--color-red);
-  }
-
-  
+.btn_puntuaciones {
+  border-color: var(--color-red);
+  box-shadow: 0 0 40px 40px var(--color-red) inset;
+  transition: box-shadow 0.2s ease-in-out;
+}
+.btn_puntuaciones:hover {
+  box-shadow: 0 0 10px 0 var(--color-red) inset, 0 0 10px 4px var(--color-red);
+}

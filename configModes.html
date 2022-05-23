@@ -243,8 +243,12 @@ function continueGame(){
                 data=$.parseJSON(data);
             if(data.result=="true"){
                 localStorage.setItem('idPlayer1',data.ids[0]);
+                localStorage.setItem('namePlayer1',playerConfig.nameofPlayer1);
+                localStorage.setItem('playerNum',1);
                 if(data.playerNumber==2){
                     localStorage.setItem('idPlayer2',data.ids[1]);
+                    localStorage.setItem('namePlayer2',playerConfig.nameofPlayer2);
+                    localStorage.setItem('playerNum',2);
                 }
                 window.location='gamePage.html';
             }else{
