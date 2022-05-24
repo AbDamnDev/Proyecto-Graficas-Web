@@ -14,7 +14,7 @@ var camera;
 //Variable para elegir mapa
 var escenaro1=false;
 var escenaro2=false;
-var escenaro3=true;
+var escenaro3=false;
 var itemsCollectable=[];
 //Variabel pausa
 var isPaused = false;
@@ -498,39 +498,42 @@ function setItemsOnGame(){
 		//	scene.add( light );
 		if(localStorageInfo.gameMode=="Solitario"){
 			switch(localStorageInfo.gameScene){
-				case 1:{
-					
-					loadSpecialItems(1);
-					keyNumber=1;
+				case '1':{
 					escenaro1=true;
 					escenaro2=false;
 					escenaro3=false;
+					loadSpecialItems(1);
+					keyNumber=1;
+					
 					break;
 				}
-				case 2:{
-					loadSpecialItems(2);
-					keyNumber=2;
+				case '2':{
 					escenaro1=false;
 					escenaro2=true;
 					escenaro3=false;
+					loadSpecialItems(2);
+					keyNumber=2;
+					
 					break;
 				}
-				case 3:{
-					loadSpecialItems(4);
-					keyNumber=4;
+				case '3':{
 					escenaro1=false;
 					escenaro2=false;
 					escenaro3=true;
+					loadSpecialItems(4);
+					keyNumber=4;
+					
 					break;
 				}
 	
 			}
 		}else{
-			loadSpecialItems(1);
-			keyNumber=1;
 			escenaro1=false;
 			escenaro2=true;
 			escenaro3=false;
+			loadSpecialItems(1);
+			keyNumber=1;
+			
 		}
 		
 //ESCENARIO1//
@@ -1597,20 +1600,38 @@ function ItemsLoaderFB(loader,path,baseName,itemsNumber,basePosition,baseRotatio
 		meshitem.position.set( basePosition.x, basePosition.y,basePosition.z);
 		meshitem.scale.set(0.7,0.7,0.7); //
 		meshitem.name=baseName;
-		var customMaterial = new THREE.ShaderMaterial({
-					uniforms: 
-					{ 
-						"c":   { type: "f", value: 1.0 },
-						"p":   { type: "f", value: 1.4 },
-						glowColor: { type: "c", value: new THREE.Color(glowcolor) },
-						viewVector: { type: "v3", value: camera.position }
-					},
-					vertexShader:  glowVS,
-					fragmentShader: glowFS,
-					side: THREE.FrontSide,
-					blending: THREE.AdditiveBlending,
-					transparent: true
-				});
+		if (localStorageInfo.gameMode=="Solitario"){
+			var customMaterial = new THREE.ShaderMaterial({
+				uniforms: 
+				{ 
+					"c":   { type: "f", value: 1.0 },
+					"p":   { type: "f", value: 1.4 },
+					glowColor: { type: "c", value: new THREE.Color(glowcolor) },
+					viewVector: { type: "v3", value: camera.position }
+				},
+				vertexShader:  glowVS,
+				fragmentShader: glowFS,
+				side: THREE.FrontSide,
+				blending: THREE.AdditiveBlending,
+				transparent: true
+			});
+		}else{
+			var customMaterial = new THREE.ShaderMaterial({
+				uniforms: 
+				{ 
+					"c":   { type: "f", value: 1.0 },
+					"p":   { type: "f", value: 1.4 },
+					glowColor: { type: "c", value: new THREE.Color(glowcolor) },
+					viewVector: { type: "v3", value: cameras[0].position }
+				},
+				vertexShader:  glowVS,
+				fragmentShader: glowFS,
+				side: THREE.FrontSide,
+				blending: THREE.AdditiveBlending,
+				transparent: true
+			});
+		}
+		
 		var smoothCubeGeom = cubecube.clone();
 		var modifier = new SubdivisionModifier( 2);
 		let subcube=modifier.modify( smoothCubeGeom );
@@ -1698,7 +1719,7 @@ function completeLoadPlayer(type, nombre, posicion,player){
 	            loadedAssets++;
         	});
 			model.name=nombre;
-			model.position.set(posicion.x,posicion.y,posicion.z);
+			model.position.set(posicion.x,posicion.y,posicion.z+15);
 			player.yaw=0;
 			player.forward=0;
 			
@@ -1940,7 +1961,10 @@ function onStart(){
 	onStartEnemies();
 	onStartAudio();
 	onStartParticles();
-	window.addEventListener( 'resize', onWindowResize );
+	if(localStorageInfo.gameMode=="Druida"){
+		window.addEventListener( 'resize', onWindowResize );
+	}
+	
 }
 function onWindowResize() {
 
@@ -2322,8 +2346,8 @@ function onUpdateTwoPlayers(deltaTime){
 			}
 		}
 		
-	const offset = calculateOffset(player[0].handler);
-	const lookat = calculateLookat(player[0].handler);
+	const offset = calculateOffset(players[0].handler);
+	const lookat = calculateLookat(players[0].handler);
 
 	cameras[0].position.copy(offset);
 	cameras[0].lookAt(lookat);
@@ -2445,8 +2469,8 @@ function onUpdateTwoPlayers(deltaTime){
 				}
 			}
 		}
-	const offset = calculateOffset(player[1].handler);
-	const lookat = calculateLookat(player[1].handler);
+		const offset = calculateOffset(players[1].handler);
+		const lookat = calculateLookat(players[1].handler);
 
 	cameras[1].position.copy(offset);
 	cameras[1].lookAt(lookat);
@@ -2520,8 +2544,8 @@ function onUpdateSingle(deltaTime){
 }
 function onUpdateMulti(deltaTime){
 	onUpdateTwoPlayers(deltaTime);
-	updateItems(deltaTime,camera[0]);
-	updateItems(deltaTime,camera[1]);
+	updateItems(deltaTime,cameras[0]);
+	updateItems(deltaTime,cameras[1]);
 	updateParticles(deltaTime);
 
 }
@@ -3167,6 +3191,21 @@ function render(){
 		
 				}
 			}
+				let Second2BB = new THREE.Box3().setFromObject(P1);
+				var EnemyB1= new THREE.Box3().setFromObject(EB1);
+				var EnemyB2= new THREE.Box3().setFromObject(EB2);
+				var EnemyB3= new THREE.Box3().setFromObject(EB3);
+				var EnemyB4= new THREE.Box3().setFromObject(EB4);
+				var EnemyB5= new THREE.Box3().setFromObject(EB5);
+				var EnemyB6= new THREE.Box3().setFromObject(EB6);
+				var EnemyB7= new THREE.Box3().setFromObject(EB7);
+		
+				if (EnemyB1.intersectsBox(Second2BB)||EnemyB2.intersectsBox(Second2BB)||EnemyB3.intersectsBox(Second2BB)
+					||EnemyB4.intersectsBox(Second2BB)||EnemyB5.intersectsBox(Second2BB)||EnemyB6.intersectsBox(Second2BB)
+					||EnemyB7.intersectsBox(Second2BB)){
+						player.handler.translateZ(Vcolision);
+						killPlayer(player);		
+					}
 			}
 			
 		//
@@ -3240,23 +3279,7 @@ function render(){
 			 var first2BB_30 = new THREE.Box3().setFromObject(CO2_30);
 			 var first2BB_31 = new THREE.Box3().setFromObject(CO2_31);
 			 var first2BB_32= new THREE.Box3().setFromObject(CO2_32);
-			 // separacion 
-			 if(localStorageInfo.typeOfPlayer=="Druida"){
-				var EnemyB1= new THREE.Box3().setFromObject(EB1);
-				var EnemyB2= new THREE.Box3().setFromObject(EB2);
-				var EnemyB3= new THREE.Box3().setFromObject(EB3);
-				var EnemyB4= new THREE.Box3().setFromObject(EB4);
-				var EnemyB5= new THREE.Box3().setFromObject(EB5);
-				var EnemyB6= new THREE.Box3().setFromObject(EB6);
-				var EnemyB7= new THREE.Box3().setFromObject(EB7);
-		
-				if (EnemyB1.intersectsBox(Second2BB)||EnemyB2.intersectsBox(Second2BB)||EnemyB3.intersectsBox(Second2BB)
-					||EnemyB4.intersectsBox(Second2BB)||EnemyB5.intersectsBox(Second2BB)||EnemyB6.intersectsBox(Second2BB)
-					||EnemyB7.intersectsBox(Second2BB)){
-						player.handler.translateZ(Vcolision);	
-					}
-			 }
-			 
+			
 		
 			 if (first2BB_1.intersectsBox(Second2BB))
 				 {
@@ -4011,9 +4034,10 @@ function renderTwo(){
 			
 			}
 		}else{
-			if(escenario2){
+			if(escenaro2){
 				const P2 =scene.getObjectByName('Jugador1');
 				const P3 =scene.getObjectByName('Jugador2');
+
 				var Second2BB1 = new THREE.Box3().setFromObject(P2);
 				var Second2BB2 = new THREE.Box3().setFromObject(P3);
 
@@ -4049,6 +4073,7 @@ function renderTwo(){
 					const CO2_30 = scene.getObjectByName('2Muro30');
 					const CO2_31 = scene.getObjectByName('2Muro31');
 					const CO2_32 = scene.getObjectByName('2Muro32');
+					
 					if(CO2_1 &&P2 &&P3){
 						var Second2BB1 = new THREE.Box3().setFromObject(P2);
 						var Second2BB2 = new THREE.Box3().setFromObject(P3);
@@ -4087,6 +4112,162 @@ function renderTwo(){
 						var first2BB_32= new THREE.Box3().setFromObject(CO2_32);
 					//separacion colisiones con enemigo
 					if(localStorageInfo.typeOfPlayer=="Druida"){
+							const EB1 =scene.getObjectByName('CB1');
+							const EB2 =scene.getObjectByName('CB2');
+							const EB3 =scene.getObjectByName('CB3');
+							const EB4 =scene.getObjectByName('CB4');
+							const EB5 =scene.getObjectByName('CB5');
+							const EB6 =scene.getObjectByName('CB6');
+							const EB7 =scene.getObjectByName('CB7');
+					
+							const vel =.1;
+						//1
+						if(pos1_a==1)
+						{
+							EB1.position.z+=vel;
+							if(EB1.position.z>2)
+							{
+								pos1_a=0;
+								EB1.rotation.y=2 * Math.PI * (180 / 360);
+							}
+						}
+						if(pos1_a==0)
+						{
+							EB1.position.z-=vel;
+					
+							if(EB1.position.z<-47)
+							{
+								pos1_a=1;
+								EB1.rotation.y=0;
+					
+							}
+						}
+						//2
+						if(pos1_b==1)
+						{
+							EB2.position.x+=vel;
+							if(EB2.position.x>22.5)
+							{
+								pos1_b=0;
+								EB2.rotation.y=2 * Math.PI * (270 / 360);
+							}
+						}
+						if(pos1_b==0)
+						{
+							EB2.position.x-=vel;
+					
+							if(EB2.position.x<-25)
+							{
+								pos1_b=1;
+								EB2.rotation.y=2 * Math.PI * (90 / 360);
+					
+							}
+						}
+						//3
+						if(pos1_c==1)
+						{
+							EB3.position.z+=vel;
+							if(EB3.position.z>2)
+							{
+								pos1_c=0;
+								EB3.rotation.y=2 * Math.PI * (180 / 360);;
+							}
+						}
+						if(pos1_c==0)
+						{
+							EB3.position.z-=vel;
+					
+							if(EB3.position.z<-47)
+							{
+								pos1_c=1;
+								EB3.rotation.y=0;
+					
+							}
+						}
+						//4
+						if(pos1_d==1)
+						{
+							EB4.position.z+=vel;
+							if(EB4.position.z>0)
+							{
+								pos1_d=0;
+								EB4.rotation.y=2 * Math.PI * (180 / 360);;
+							}
+						}
+						if(pos1_d==0)
+						{
+							EB4.position.z-=vel;
+					
+							if(EB4.position.z<-28)
+							{
+								pos1_d=1;
+								EB4.rotation.y=0;
+					
+							}
+						}
+						//5
+						if(pos1_e==1)
+						{
+							EB5.position.z+=vel;
+							if(EB5.position.z>-15)
+							{
+								pos1_e=0;
+								EB5.rotation.y=2 * Math.PI * (180 / 360);;
+							}
+						}
+						if(pos1_e==0)
+						{
+							EB5.position.z-=vel;
+					
+							if(EB5.position.z<-36)
+							{
+								pos1_e=1;
+								EB5.rotation.y=0;
+					
+							}
+						}
+						//6
+						if(pos1_f==1)
+						{
+							EB6.position.z+=vel;
+							if(EB6.position.z>-6)
+							{
+								pos1_f=0;
+								EB6.rotation.y=2 * Math.PI * (180 / 360);;
+							}
+						}
+						if(pos1_f==0)
+						{
+							EB6.position.z-=vel;
+					
+							if(EB6.position.z<-47)
+							{
+								pos1_f=1;
+								EB6.rotation.y=0;
+					
+							}
+						}
+						//7
+						if(pos1_g==1)
+						{
+							EB7.position.x+=vel;
+							if(EB7.position.x>10)
+							{
+								pos1_g=0;
+								EB7.rotation.y=2 * Math.PI * (270 / 360);
+							}
+						}
+						if(pos1_g==0)
+						{
+							EB7.position.x-=vel;
+					
+							if(EB7.position.x<-2)
+							{
+								pos1_g=1;
+								EB7.rotation.y=2 * Math.PI * (90 / 360);
+					
+							}
+			}
 						var EnemyB1= new THREE.Box3().setFromObject(EB1);
 						var EnemyB2= new THREE.Box3().setFromObject(EB2);
 						var EnemyB3= new THREE.Box3().setFromObject(EB3);
@@ -4099,7 +4280,7 @@ function renderTwo(){
 						||EnemyB4.intersectsBox(Second2BB1)||EnemyB5.intersectsBox(Second2BB1)||EnemyB6.intersectsBox(Second2BB1)
 						||EnemyB7.intersectsBox(Second2BB1))
 						{
-							Vcolision= (players[0].forward * deltaTime*-1 )-.7;
+							let Vcolision= (players[0].forward * deltaTime*-1 )-.7;
 							players[0].handler.translateZ(Vcolision);
 							killPlayer(players[0]);	
 						}
@@ -4108,7 +4289,7 @@ function renderTwo(){
 						||EnemyB4.intersectsBox(Second2BB2)||EnemyB5.intersectsBox(Second2BB2)||EnemyB6.intersectsBox(Second2BB2)
 						||EnemyB7.intersectsBox(Second2BB2))
 						{
-							Vcolision= (players[1].forward * deltaTime*-1 )-.7;
+							let Vcolision= (players[1].forward * deltaTime*-1 )-.7;
 							players[1].handler.translateZ(Vcolision);
 							killPlayer(players[1]);		
 						}
@@ -4127,7 +4308,7 @@ function renderTwo(){
 					||first2BB_26.intersectsBox(Second2BB1)||first2BB_27.intersectsBox(Second2BB1)|| first2BB_28.intersectsBox(Second2BB1)
 					||first2BB_29.intersectsBox(Second2BB1)||first2BB_30.intersectsBox(Second2BB1)||first2BB_31.intersectsBox(Second2BB1)||first2BB_32.intersectsBox(Second2BB1))
 					{
-						Vcolision= (players[0].forward * deltaTime*-1 )-.7;
+						let Vcolision= (players[0].forward * deltaTime*-1 )-.7;
 						players[0].handler.translateZ(Vcolision);
 					}
 					
@@ -4142,7 +4323,7 @@ function renderTwo(){
 					||first2BB_23.intersectsBox(Second2BB2)||first2BB_24.intersectsBox(Second2BB2)||first2BB_25.intersectsBox(Second2BB2)
 					||first2BB_26.intersectsBox(Second2BB2)||first2BB_27.intersectsBox(Second2BB2)|| first2BB_28.intersectsBox(Second2BB2)
 					||first2BB_29.intersectsBox(Second2BB2)||first2BB_30.intersectsBox(Second2BB2)||first2BB_31.intersectsBox(Second2BB2)||first2BB_32.intersectsBox(Second2BB2))
-					{	Vcolision= (players[1].forward * deltaTime*-1 )-.7;
+					{	let Vcolision= (players[1].forward * deltaTime*-1 )-.7;
 						players[1].handler.translateZ(Vcolision);
 					}
 				
