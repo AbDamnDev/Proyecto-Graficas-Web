@@ -5,6 +5,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="CSS/stylegameOver.css">
 	<script type="text/javascript" src="JS/libs/jquery-3.6.0.min.js"></script>
+	<script type="text/javascript" src="JS/mifacebook.js"></script>
 	<title>Game over</title>
 </head>
 <body>
@@ -18,7 +19,8 @@ Para eso accedemos a lo que se almacenó en el localStorage -->
 	transform: translate(-50%, -50%);">
 
 <div class="input_table">
-	<div ><p id="score">Score:</p> </div>
+	<div ><center><p style="color:white;"id="score" data-score="0">Score:</p></center></div>
+	<button class="btn_compartir" id="btn_share">Compartir en Facebook</button>
 	<center><button onclick="window.location = 'index.html'" class="btn_gameOverMenu">Salir al Menu</button></center>
 </div>
 
@@ -28,7 +30,14 @@ Para eso accedemos a lo que se almacenó en el localStorage -->
 <script>
 	if (localStorage["score"]){
 		$('p#score').text("Score: "+localStorage.getItem('score'));
+		$('p#score').attr('data-score',localStorage.getItem('score'));
 		localStorage.clear();
 	}
+	$(document).ready(function(){
+		$('#btn_share').on('click',function(){
+			let score=$('p#score').attr('data-score');
+			shareFB(score);
+		});
+	});
 </script>
 </html>

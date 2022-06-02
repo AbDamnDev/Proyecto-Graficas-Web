@@ -12,6 +12,7 @@ include_once("controller.php");
         if(strcmp($modoJuego,"Multijugador")==0){
             $nombrejugador2=$_POST["username2"];
             $players=2;
+            $scene=1; //todo el multijugador va a ser en la escena 1
         }
         $idsarray=array();
         for($i=0;$i<$players;$i++){

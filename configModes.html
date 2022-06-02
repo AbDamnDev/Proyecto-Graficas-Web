@@ -78,8 +78,8 @@
         transform: translate(-50%, -50%);">
         <div class="input_table" >
             <form> 
-            <select name="Graficas">
-                <option class="btn_grafBajo" id="ID_GRAFICASBajo">Bajo</option>
+            <select name="Graficas" id="Graficas">
+                <option class="btn_grafBajo" value="Bajo" id="ID_GRAFICASBajo">Bajo</option>
                 <option value="Medio" id="ID_GRAFICASMedio">Medio</option>
                 <option value="HD" id="ID_GRAFICASHD">HD</option>
             </select>
@@ -188,10 +188,14 @@ $(document).ready(function (){
         localStorage.setItem("gameScene", 3);
     });    
 
-    $('#ID_GRAFICASBajo').click( function (){
-        var graficasJuego = $('#ID_GRAFICASBajo').text();
-        localStorage.setItem("graphicsConfig", graficasJuego);
-    });   
+    $('#Graficas').on('change', function (e) {
+        var optionSelected = $('#Graficas option:selected').val();
+        if (optionSelected!=null){
+            var graficasJuego = $('#Graficas option:selected').text();
+            localStorage.setItem("graphicsConfig", graficasJuego);
+        }
+    });
+  
 
     $('#ID_VOLUMENYES').click( function (){
         var volOpt = $('#ID_VOLUMENYES').text();
