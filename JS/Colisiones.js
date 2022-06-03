@@ -21,7 +21,7 @@ function killPlayer(player){
     player.mixer.stopAllAction();
     player.actions.death.play();
 }
-function singleLevel1Colision(deltatime,Vcolision,scene,player,Jugadornum)
+function singleLevel1Colision(deltatime,Vcolision,scene,player,Jugadornum,typep)
 {
  
         const P1 =scene.getObjectByName('Jugador');
@@ -55,11 +55,12 @@ function singleLevel1Colision(deltatime,Vcolision,scene,player,Jugadornum)
         const CO15 = scene.getObjectByName('Muro15');
         const CO16 = scene.getObjectByName('Muro16');
 
+        if(typep==1){
         var enemy1 =new THREE.Box3().setFromObject(E1);
 		var enemy2 =new THREE.Box3().setFromObject(E2);
 		var enemy3 =new THREE.Box3().setFromObject(E3);
 		var enemy4 =new THREE.Box3().setFromObject(E4);
-    
+        }
 
 
         if (CO1 && (P1 || P2 || P3))
@@ -186,7 +187,7 @@ function singleLevel1Colision(deltatime,Vcolision,scene,player,Jugadornum)
         player.handler.translateZ(Vcolision);		
     }
         }
-        if(E1 && (P1 || P2 || P3))
+        if(E1 && (P1 || P2 || P3) && typep ==1)
         {
             if (enemy1.intersectsBox(SecondBB)||enemy2.intersectsBox(SecondBB)||enemy3.intersectsBox(SecondBB)||enemy4.intersectsBox(SecondBB))
             {
@@ -197,8 +198,10 @@ function singleLevel1Colision(deltatime,Vcolision,scene,player,Jugadornum)
 
 
 }
-function singleLevel1Enemy(deltatime,Vcolision,scene)
+function singleLevel1Enemy(deltatime,Vcolision,scene,typep)
 {
+    if(typep==1)
+    {
     const E1 =scene.getObjectByName('C1');
 	const E2 =scene.getObjectByName('C2');
 	const E3 =scene.getObjectByName('C3');
@@ -285,6 +288,7 @@ if(pos_d==0)
 		E4.rotation.y=2 * Math.PI * (90 / 360);
 
 	}
+}
 }
 }
 function singleLevel2Colision(deltatime,Vcolision,scene,player,Jugadornum){
@@ -697,6 +701,9 @@ function singleLevel3(deltatime,Vcolision,scene,player,Jugadornum){
 
 
 		const CC1 =scene.getObjectByName('CC1');
+        const CC2 =scene.getObjectByName('CC2');
+		const CC3 =scene.getObjectByName('CC3');
+
 
 		CC1.rotation.y+=VelGiro;
 
@@ -790,7 +797,14 @@ function singleLevel3(deltatime,Vcolision,scene,player,Jugadornum){
 				var first3BBT_23 = new THREE.Box3().setFromObject(T_23);
 				var first3BBT_24 = new THREE.Box3().setFromObject(T_24);
 				var first3BBJ = new THREE.Box3().setFromObject(J_C);
+				var Cubo1 = new THREE.Box3().setFromObject(CC2);
+				var Cubo2 = new THREE.Box3().setFromObject(CC3);
 
+
+                if (Cubo1.intersectsBox(Second2BB)||Cubo2.intersectsBox(Second2BB))
+				{
+                    killPlayer(player);	
+				}
 
 
 				if (first3BB_3.intersectsBox(Second2BB))

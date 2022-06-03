@@ -24,6 +24,7 @@ var escenaro1=false;
 var escenaro2=false;
 var escenaro3=false;
 var itemsCollectable=[];
+var tipopersonaje;
 //Variabel pausa
 var isPaused = false;
 
@@ -586,7 +587,7 @@ function setItemsOnGame(){
 if (escenaro1)
 {
 	//TODO: PROBAR LOS ESCENARIOS
-	modelosN1(scene,loader,monsterMixers);
+	modelosN1(scene,loader,monsterMixers,tipopersonaje);
 }
 
 
@@ -927,6 +928,10 @@ function completeLoadPlayer(type, nombre, posicion,player){
 			player.yaw=0;
 			player.forward=0;
 			
+			const light = new THREE.PointLight( 0x76bda4, 1, 20);
+			light.position.set( 0, 0, 0 );
+			light.castShadow = true; // default false
+			player.handler.add( light );
 			//model.add(camera);
 			//camera.position.set(0,25,0);
 			scene.add(model);
@@ -1160,6 +1165,7 @@ function onStart(){
 	'gameAssets/terrainTextures/terrain/piso.jpg','gameAssets/terrainTextures/terrain/moss.jpg',-130);
 	setItemsOnGame();
 	loadPlayerS(localStorageInfo.playerNum,localStorageInfo.typeOfPlayer);
+	if(localStorageInfo.typeOfPlayer=="Druida"){tipopersonaje=1;}else{tipopersonaje=0;}
 	onStartEnemies();
 	onStartAudio();
 	if(localStorageInfo.gameMode=="Solitario"){//Multijugador
@@ -1865,8 +1871,8 @@ function render(){
 			const Vcolision= (player.forward * deltaTime *-1)-.5;
 			if (escenaro1)
 			{
-			singleLevel1Enemy(deltaTime,Vcolision,scene);
-			singleLevel1Colision(deltaTime,Vcolision,scene,player,0);
+			singleLevel1Enemy(deltaTime,Vcolision,scene,tipopersonaje);
+			singleLevel1Colision(deltaTime,Vcolision,scene,player,0,tipopersonaje);
 			}
 			if (escenaro2)
 			{

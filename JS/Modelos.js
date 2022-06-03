@@ -6,11 +6,11 @@ var posicionEscenario1X=0;
 var posicionEscenario1Z=-8;
 var Enemigoescala=.1
 
-function modelosN1(scene,loader,monsterMixers)
+function modelosN1(scene,loader,monsterMixers,typep)
 {
 
 
-
+if (typep==1){
 
 	var geometryCube = new THREE.BoxGeometry(2,2,2);
 	var materialCube = new THREE.MeshBasicMaterial({color:0x00aaff});
@@ -95,7 +95,7 @@ function modelosN1(scene,loader,monsterMixers)
 		
 	});
 
-
+}
 
 			loader.load('gameAssets/3dModels/nivel1/nivel1Suelo.fbx',(model)=>{
 				model.name="Suelo1";
@@ -666,7 +666,7 @@ function modelosN3(scene,loader)
         cubec3.rotation.y=2 * Math.PI * (135 / 360);
         cubec1.add(cubec3)
     
-    
+		const jug = scene.getObjectByName('Suelo3');
     
     
 		loader.load('gameAssets/3dModels/nivel3/E3_Arbol9.fbx',(model)=>{
