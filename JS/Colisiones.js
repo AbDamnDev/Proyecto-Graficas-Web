@@ -14,7 +14,7 @@ var pos1_f=1;
 var pos1_g=1;
 
 var vel=.08;		    
-var VelGiro=.003
+var VelGiro=.0008;
 function killPlayer(player){
 	
     player.death=true; //a lo mejor esta condicion es para ejecutar el killplayer
@@ -55,7 +55,7 @@ function singleLevel1Colision(deltatime,Vcolision,scene,player,Jugadornum,typep)
         const CO15 = scene.getObjectByName('Muro15');
         const CO16 = scene.getObjectByName('Muro16');
 
-        if(typep==1){
+        if(typep =='Druida'){
         var enemy1 =new THREE.Box3().setFromObject(E1);
 		var enemy2 =new THREE.Box3().setFromObject(E2);
 		var enemy3 =new THREE.Box3().setFromObject(E3);
@@ -187,126 +187,138 @@ function singleLevel1Colision(deltatime,Vcolision,scene,player,Jugadornum,typep)
         player.handler.translateZ(Vcolision);		
     }
         }
-        if(E1 && (P1 || P2 || P3) && typep ==1)
+        if(E1 && (P1 || P2 || P3) && typep =='Druida')
         {
-            if (enemy1.intersectsBox(SecondBB)||enemy2.intersectsBox(SecondBB)||enemy3.intersectsBox(SecondBB)||enemy4.intersectsBox(SecondBB))
-            {
-                player.handler.translateZ(Vcolision);
-                killPlayer(player);	
+            if(!player.pCoat.active &&!player.pEye.active){ //si esta activa la capa no te ven, no colisiona, si se mueven, SI ACTIVO EL OJO ELLOS NI SE VEN NI TE COLISIONAN
+                if (enemy1.intersectsBox(SecondBB)||enemy2.intersectsBox(SecondBB)||enemy3.intersectsBox(SecondBB)||enemy4.intersectsBox(SecondBB))
+                {
+                    player.handler.translateZ(Vcolision);
+                    killPlayer(player);	
+                }
             }
+            
         }
 
 
 }
-function singleLevel1Enemy(deltatime,Vcolision,scene,typep)
+function singleLevel1Enemy(deltatime,Vcolision,scene,typep,player)
 {
-    if(typep==1)
+    if(typep=='Druida')
     {
     const E1 =scene.getObjectByName('C1');
 	const E2 =scene.getObjectByName('C2');
 	const E3 =scene.getObjectByName('C3');
 	const E4 =scene.getObjectByName('C4');
-    if(pos_a==1)
-{
-	E1.position.z+=vel;
-	if(E1.position.z>6)
-	{
-		pos_a=0;
-		E1.rotation.y=2 * Math.PI * (180 / 360);;
-	}
-}
-if(pos_a==0)
-{
-	E1.position.z-=vel;
+    /*player.handler.children[0].material.transparent=true;
+			player.handler.children[0].material.opacity=0.5; */
+    let opacity=1;
+    let transparent=false;
+    if (!player.pEye.active){
+        opacity=1;
+        transparent=false;
+        if(pos_a==1)
+        {
+        E1.position.z+=vel;
+        if(E1.position.z>6)
+        {
+            pos_a=0;
+            E1.rotation.y=2 * Math.PI * (180 / 360);;
+        }
+        }
+        if(pos_a==0)
+        {
+            E1.position.z-=vel;
 
-	if(E1.position.z<-21)
-	{
-		pos_a=1;
-		E1.rotation.y=0;
+            if(E1.position.z<-21)
+            {
+                pos_a=1;
+                E1.rotation.y=0;
 
-	}
-}
-//2
-if(pos_b==1)
-{
-	E2.position.x+=vel;
-	if(E2.position.x>6)
-	{
-		pos_b=0;
-		E2.rotation.y=2 * Math.PI * (270 / 360);
-	}
-}
-if(pos_b==0)
-{
-	E2.position.x-=vel;
+            }
+        }
+        //2
+        if(pos_b==1)
+        {
+            E2.position.x+=vel;
+            if(E2.position.x>6)
+            {
+                pos_b=0;
+                E2.rotation.y=2 * Math.PI * (270 / 360);
+            }
+        }
+        if(pos_b==0)
+        {
+            E2.position.x-=vel;
 
-	if(E2.position.x<-6)
-	{
-		pos_b=1;
-		E2.rotation.y=2 * Math.PI * (90 / 360);
+            if(E2.position.x<-6)
+            {
+                pos_b=1;
+                E2.rotation.y=2 * Math.PI * (90 / 360);
 
-	}
-}
-//3
-if(pos_c==1)
-{
-	E3.position.z+=vel;
-	if(E3.position.z>6)
-	{
-		pos_c=0;
-		E3.rotation.y=2 * Math.PI * (180 / 360);
-	}
-}
-if(pos_c==0)
-{
-	E3.position.z-=vel;
+            }
+        }
+        //3
+        if(pos_c==1)
+        {
+            E3.position.z+=vel;
+            if(E3.position.z>6)
+            {
+                pos_c=0;
+                E3.rotation.y=2 * Math.PI * (180 / 360);
+            }
+        }
+        if(pos_c==0)
+        {
+            E3.position.z-=vel;
 
-	if(E3.position.z<-21)
-	{
-		pos_c=1;
-		E3.rotation.y=0;
+            if(E3.position.z<-21)
+            {
+                pos_c=1;
+                E3.rotation.y=0;
 
-	}
-}
-//4
-if(pos_d==1)
-{
-	E4.position.x+=vel;
-	if(E4.position.x>6)
-	{
-		pos_d=0;
-		E4.rotation.y=2 * Math.PI * (270 / 360);
-	}
-}
-if(pos_d==0)
-{
-	E4.position.x-=vel;
+            }
+        }
+        //4
+        if(pos_d==1)
+        {
+            E4.position.x+=vel;
+            if(E4.position.x>6)
+            {
+                pos_d=0;
+                E4.rotation.y=2 * Math.PI * (270 / 360);
+            }
+        }
+        if(pos_d==0)
+        {
+            E4.position.x-=vel;
 
-	if(E4.position.x<-6)
-	{
-		pos_d=1;
-		E4.rotation.y=2 * Math.PI * (90 / 360);
+            if(E4.position.x<-6)
+            {
+                pos_d=1;
+                E4.rotation.y=2 * Math.PI * (90 / 360);
 
-	}
+            }
+        }
+    }else{
+        opacity=0;
+        transparent=true;  
+    }
+        E1.children[0].material.transparent=transparent;
+        E1.children[0].material.opacity=opacity;
+        E2.children[0].material.transparent=transparent;
+        E2.children[0].material.opacity=opacity;
+        E3.children[0].material.transparent=transparent;
+        E3.children[0].material.opacity=opacity;
+        E4.children[0].material.transparent=transparent;
+        E4.children[0].material.opacity=opacity;
+    }
 }
-}
-}
-function singleLevel2Colision(deltatime,Vcolision,scene,player,Jugadornum){
+function singleLevel2Colision(deltatime,Vcolision,scene,player,Jugadornum,typep){
  
         const P1 =scene.getObjectByName('Jugador');
         const P2 =scene.getObjectByName('Jugador1');
         const P3 =scene.getObjectByName('Jugador2');
 
-   
-
-        const EB1 =scene.getObjectByName('CB1');
-        const EB2 =scene.getObjectByName('CB2');
-        const EB3 =scene.getObjectByName('CB3');
-        const EB4 =scene.getObjectByName('CB4');
-        const EB5 =scene.getObjectByName('CB5');
-        const EB6 =scene.getObjectByName('CB6');
-        const EB7 =scene.getObjectByName('CB7');
-    
         const CO2_1 = scene.getObjectByName('2Muro1');
         const CO2_2 = scene.getObjectByName('2Muro2');
         const CO2_3 = scene.getObjectByName('2Muro3');
@@ -354,13 +366,7 @@ function singleLevel2Colision(deltatime,Vcolision,scene,player,Jugadornum){
         {
         var Second2BB = new THREE.Box3().setFromObject(P3);
         }
-        var EnemyB1= new THREE.Box3().setFromObject(EB1);
-        var EnemyB2= new THREE.Box3().setFromObject(EB2);
-        var EnemyB3= new THREE.Box3().setFromObject(EB3);
-        var EnemyB4= new THREE.Box3().setFromObject(EB4);
-        var EnemyB5= new THREE.Box3().setFromObject(EB5);
-        var EnemyB6= new THREE.Box3().setFromObject(EB6);
-        var EnemyB7= new THREE.Box3().setFromObject(EB7);
+       
          var first2BB_1 = new THREE.Box3().setFromObject(CO2_1);
          var first2BB_2 = new THREE.Box3().setFromObject(CO2_2);
          var first2BB_3 = new THREE.Box3().setFromObject(CO2_3);
@@ -393,14 +399,33 @@ function singleLevel2Colision(deltatime,Vcolision,scene,player,Jugadornum){
          var first2BB_30 = new THREE.Box3().setFromObject(CO2_30);
          var first2BB_31 = new THREE.Box3().setFromObject(CO2_31);
          var first2BB_32= new THREE.Box3().setFromObject(CO2_32);
-    
-         if (EnemyB1.intersectsBox(Second2BB)||EnemyB2.intersectsBox(Second2BB)||EnemyB3.intersectsBox(Second2BB)
-					||EnemyB4.intersectsBox(Second2BB)||EnemyB5.intersectsBox(Second2BB)||EnemyB6.intersectsBox(Second2BB)
-					||EnemyB7.intersectsBox(Second2BB)){
-						player.handler.translateZ(Vcolision);
-						killPlayer(player);		
-					}
-    
+
+         if(typep=='Druida'){
+            const EB1 =scene.getObjectByName('CB1');
+            const EB2 =scene.getObjectByName('CB2');
+            const EB3 =scene.getObjectByName('CB3');
+            const EB4 =scene.getObjectByName('CB4');
+            const EB5 =scene.getObjectByName('CB5');
+            const EB6 =scene.getObjectByName('CB6');
+            const EB7 =scene.getObjectByName('CB7');
+
+            var EnemyB1= new THREE.Box3().setFromObject(EB1);
+            var EnemyB2= new THREE.Box3().setFromObject(EB2);
+            var EnemyB3= new THREE.Box3().setFromObject(EB3);
+            var EnemyB4= new THREE.Box3().setFromObject(EB4);
+            var EnemyB5= new THREE.Box3().setFromObject(EB5);
+            var EnemyB6= new THREE.Box3().setFromObject(EB6);
+            var EnemyB7= new THREE.Box3().setFromObject(EB7);
+
+            if(!player.pCoat.active &&!player.pEye.active){ 
+                if (EnemyB1.intersectsBox(Second2BB)||EnemyB2.intersectsBox(Second2BB)||EnemyB3.intersectsBox(Second2BB)
+                ||EnemyB4.intersectsBox(Second2BB)||EnemyB5.intersectsBox(Second2BB)||EnemyB6.intersectsBox(Second2BB)
+                ||EnemyB7.intersectsBox(Second2BB)){
+                    player.handler.translateZ(Vcolision);
+                    killPlayer(player);		
+                }
+            }
+        }
          if (first2BB_1.intersectsBox(Second2BB))
              {
              player.handler.translateZ(Vcolision);	
@@ -534,7 +559,8 @@ function singleLevel2Colision(deltatime,Vcolision,scene,player,Jugadornum){
     
     
 }
-function singleLevel2Enemy(deltatime,Vcolision,scene){
+function singleLevel2Enemy(deltatime,Vcolision,scene,typep,player){
+    if(typep=='Druida'){
     const EB1 =scene.getObjectByName('CB1');
     const EB2 =scene.getObjectByName('CB2');
     const EB3 =scene.getObjectByName('CB3');
@@ -542,154 +568,177 @@ function singleLevel2Enemy(deltatime,Vcolision,scene){
     const EB5 =scene.getObjectByName('CB5');
     const EB6 =scene.getObjectByName('CB6');
     const EB7 =scene.getObjectByName('CB7');
+    let opacity=1;
+    let transparent=false;
+        if (!player.pEye.active){
+            opacity=1;
+            transparent=false;
+            //1
+            if(pos1_a==1)
+            {
+                EB1.position.z+=vel;
+                if(EB1.position.z>2)
+                {
+                    pos1_a=0;
+                    EB1.rotation.y=2 * Math.PI * (180 / 360);
+                }
+            }
+            if(pos1_a==0)
+            {
+                EB1.position.z-=vel;
 
-//1
-if(pos1_a==1)
-{
-    EB1.position.z+=vel;
-    if(EB1.position.z>2)
-    {
-        pos1_a=0;
-        EB1.rotation.y=2 * Math.PI * (180 / 360);
+                if(EB1.position.z<-47)
+                {
+                    pos1_a=1;
+                    EB1.rotation.y=0;
+
+                }
+            }
+            //2
+            if(pos1_b==1)
+            {
+                EB2.position.x+=vel;
+                if(EB2.position.x>22.5)
+                {
+                    pos1_b=0;
+                    EB2.rotation.y=2 * Math.PI * (270 / 360);
+                }
+            }
+            if(pos1_b==0)
+            {
+                EB2.position.x-=vel;
+
+                if(EB2.position.x<-25)
+                {
+                    pos1_b=1;
+                    EB2.rotation.y=2 * Math.PI * (90 / 360);
+
+                }
+            }
+            //3
+            if(pos1_c==1)
+            {
+                EB3.position.z+=vel;
+                if(EB3.position.z>2)
+                {
+                    pos1_c=0;
+                    EB3.rotation.y=2 * Math.PI * (180 / 360);;
+                }
+            }
+            if(pos1_c==0)
+            {
+                EB3.position.z-=vel;
+
+                if(EB3.position.z<-47)
+                {
+                    pos1_c=1;
+                    EB3.rotation.y=0;
+
+                }
+            }
+            //4
+            if(pos1_d==1)
+            {
+                EB4.position.z+=vel;
+                if(EB4.position.z>0)
+                {
+                    pos1_d=0;
+                    EB4.rotation.y=2 * Math.PI * (180 / 360);;
+                }
+            }
+            if(pos1_d==0)
+            {
+                EB4.position.z-=vel;
+
+                if(EB4.position.z<-28)
+                {
+                    pos1_d=1;
+                    EB4.rotation.y=0;
+
+                }
+            }
+            //5
+            if(pos1_e==1)
+            {
+                EB5.position.z+=vel;
+                if(EB5.position.z>-15)
+                {
+                    pos1_e=0;
+                    EB5.rotation.y=2 * Math.PI * (180 / 360);;
+                }
+            }
+            if(pos1_e==0)
+            {
+                EB5.position.z-=vel;
+
+                if(EB5.position.z<-36)
+                {
+                    pos1_e=1;
+                    EB5.rotation.y=0;
+
+                }
+            }
+            //6
+            if(pos1_f==1)
+            {
+                EB6.position.z+=vel;
+                if(EB6.position.z>-6)
+                {
+                    pos1_f=0;
+                    EB6.rotation.y=2 * Math.PI * (180 / 360);;
+                }
+            }
+            if(pos1_f==0)
+            {
+                EB6.position.z-=vel;
+
+                if(EB6.position.z<-47)
+                {
+                    pos1_f=1;
+                    EB6.rotation.y=0;
+
+                }
+            }
+            //7
+            if(pos1_g==1)
+            {
+                EB7.position.x+=vel;
+                if(EB7.position.x>10)
+                {
+                    pos1_g=0;
+                    EB7.rotation.y=2 * Math.PI * (270 / 360);
+                }
+            }
+            if(pos1_g==0)
+            {
+                EB7.position.x-=vel;
+
+                if(EB7.position.x<-2)
+                {
+                    pos1_g=1;
+                    EB7.rotation.y=2 * Math.PI * (90 / 360);
+
+                }
+            }
+        }else{
+            opacity=0;
+            transparent=true; 
+        }
+        EB1.children[0].material.transparent=transparent;
+        EB1.children[0].material.opacity=opacity;
+        EB2.children[0].material.transparent=transparent;
+        EB2.children[0].material.opacity=opacity;
+        EB3.children[0].material.transparent=transparent;
+        EB3.children[0].material.opacity=opacity;
+        EB4.children[0].material.transparent=transparent;
+        EB4.children[0].material.opacity=opacity;
+        EB5.children[0].material.transparent=transparent;
+        EB5.children[0].material.opacity=opacity;
+        EB6.children[0].material.transparent=transparent;
+        EB6.children[0].material.opacity=opacity;
+        EB7.children[0].material.transparent=transparent;
+        EB7.children[0].material.opacity=opacity;
     }
-}
-if(pos1_a==0)
-{
-    EB1.position.z-=vel;
-
-    if(EB1.position.z<-47)
-    {
-        pos1_a=1;
-        EB1.rotation.y=0;
-
-    }
-}
-//2
-if(pos1_b==1)
-{
-    EB2.position.x+=vel;
-    if(EB2.position.x>22.5)
-    {
-        pos1_b=0;
-        EB2.rotation.y=2 * Math.PI * (270 / 360);
-    }
-}
-if(pos1_b==0)
-{
-    EB2.position.x-=vel;
-
-    if(EB2.position.x<-25)
-    {
-        pos1_b=1;
-        EB2.rotation.y=2 * Math.PI * (90 / 360);
-
-    }
-}
-//3
-if(pos1_c==1)
-{
-    EB3.position.z+=vel;
-    if(EB3.position.z>2)
-    {
-        pos1_c=0;
-        EB3.rotation.y=2 * Math.PI * (180 / 360);;
-    }
-}
-if(pos1_c==0)
-{
-    EB3.position.z-=vel;
-
-    if(EB3.position.z<-47)
-    {
-        pos1_c=1;
-        EB3.rotation.y=0;
-
-    }
-}
-//4
-if(pos1_d==1)
-{
-    EB4.position.z+=vel;
-    if(EB4.position.z>0)
-    {
-        pos1_d=0;
-        EB4.rotation.y=2 * Math.PI * (180 / 360);;
-    }
-}
-if(pos1_d==0)
-{
-    EB4.position.z-=vel;
-
-    if(EB4.position.z<-28)
-    {
-        pos1_d=1;
-        EB4.rotation.y=0;
-
-    }
-}
-//5
-if(pos1_e==1)
-{
-    EB5.position.z+=vel;
-    if(EB5.position.z>-15)
-    {
-        pos1_e=0;
-        EB5.rotation.y=2 * Math.PI * (180 / 360);;
-    }
-}
-if(pos1_e==0)
-{
-    EB5.position.z-=vel;
-
-    if(EB5.position.z<-36)
-    {
-        pos1_e=1;
-        EB5.rotation.y=0;
-
-    }
-}
-//6
-if(pos1_f==1)
-{
-    EB6.position.z+=vel;
-    if(EB6.position.z>-6)
-    {
-        pos1_f=0;
-        EB6.rotation.y=2 * Math.PI * (180 / 360);;
-    }
-}
-if(pos1_f==0)
-{
-    EB6.position.z-=vel;
-
-    if(EB6.position.z<-47)
-    {
-        pos1_f=1;
-        EB6.rotation.y=0;
-
-    }
-}
-//7
-if(pos1_g==1)
-{
-    EB7.position.x+=vel;
-    if(EB7.position.x>10)
-    {
-        pos1_g=0;
-        EB7.rotation.y=2 * Math.PI * (270 / 360);
-    }
-}
-if(pos1_g==0)
-{
-    EB7.position.x-=vel;
-
-    if(EB7.position.x<-2)
-    {
-        pos1_g=1;
-        EB7.rotation.y=2 * Math.PI * (90 / 360);
-
-    }
-}
 //
 }
 function singleLevel3(deltatime,Vcolision,scene,player,Jugadornum){
@@ -800,11 +849,12 @@ function singleLevel3(deltatime,Vcolision,scene,player,Jugadornum){
 				var Cubo1 = new THREE.Box3().setFromObject(CC2);
 				var Cubo2 = new THREE.Box3().setFromObject(CC3);
 
-
-                if (Cubo1.intersectsBox(Second2BB)||Cubo2.intersectsBox(Second2BB))
-				{
-                    killPlayer(player);	
-				}
+                 if(!player.pCoat.active &&!player.pEye.active){ 
+                    if (Cubo1.intersectsBox(Second2BB)||Cubo2.intersectsBox(Second2BB))
+                    {
+                        killPlayer(player);	
+                    }
+                }
 
 
 				if (first3BB_3.intersectsBox(Second2BB))

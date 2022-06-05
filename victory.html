@@ -15,7 +15,7 @@
 	transform: translate(-50%, -50%);">
 
 <div class="input_table">
-	<div ><p style="color:white;"id="score" data-score="0">Score:</p> </div>
+	<div ><center><p style="color:white;"id="names">Nombre:</p><center><p style="color:white;"id="score" data-score="0">Score:</p></center></div>
 	<button class="btn_compartir" id="btn_share">Compartir en Facebook</button>
 	<center><button onclick="window.location = 'index.html'" class="btn_victoryMenu">Salir al Menu</button></center>
 </div>
@@ -23,8 +23,12 @@
 </body>
 <script>
 	if (localStorage["score"]){
+		$('p#names').text(localStorage.getItem('namePlayer1')+ "  ha ganado el juego");
 		$('p#score').text("Score: "+localStorage.getItem('score'));
 		$('p#score').attr('data-score',localStorage.getItem('score'));
+		if (localStorage["namePlayer2"]){
+			$('p#names').text(localStorage.getItem('namePlayer1')+ " ha ganado el juego y "+localStorage.getItem('namePlayer2')+"  ha perdido el juego");
+		}
 		localStorage.clear();
 	}
 	$(document).ready(function(){

@@ -248,7 +248,7 @@ if (typep==1){
 			});
 
 }
-function modelosN2(scene,loader,monsterMixers)
+function modelosN2(scene,loader,monsterMixers,typep)
 {
 
 var escalaEscenario2=.015;
@@ -256,7 +256,7 @@ var posicionEscenario2Y=19;
 var posicionEscenario2X=0;
 var posicionEscenario2Z=-23;
 
-
+if (typep==1){
 	var geometryCube = new THREE.BoxGeometry(2,2,2);
 	var materialCube = new THREE.MeshBasicMaterial({color:0x000000});
 	materialCube.transparent=true;
@@ -393,6 +393,8 @@ var posicionEscenario2Z=-23;
 		});
 		
 	});
+
+}
 
 
 loader.load('gameAssets/3dModels/nivel2/N2Escenario.fbx',(model)=>{
@@ -642,7 +644,7 @@ function modelosN3(scene,loader)
     var posicionEscenario3Z=-40;
     
 
-        var geometryCube = new THREE.BoxGeometry(2,2,2);
+        var geometryCube = new THREE.BoxGeometry(0.2,0.2,0.2);
         var geometryCube2 = new THREE.BoxGeometry(100,2,7);
     
         var materialCube = new THREE.MeshBasicMaterial({color:0xffffff});
@@ -651,21 +653,23 @@ function modelosN3(scene,loader)
         var cubec1 = new THREE.Mesh(geometryCube,materialCube);
         cubec1.name="CC1";
         cubec1.position.set(0,17.5,-38);
-        scene.add(cubec1)
+       
     
         var cubec2 = new THREE.Mesh(geometryCube2,materialCube);
         cubec2.name="CC2";
         cubec2.position.set(0,0,0);
         cubec2.rotation.y=2 * Math.PI * (45 / 360);
     
-        cubec1.add(cubec2)
+        cubec1.add(cubec2);
     
         var cubec3 = new THREE.Mesh(geometryCube2,materialCube);
         cubec3.name="CC3";
         cubec3.position.set(0,0,0);
         cubec3.rotation.y=2 * Math.PI * (135 / 360);
-        cubec1.add(cubec3)
-    
+        cubec1.add(cubec3);
+
+		scene.add(cubec1);
+
 		const jug = scene.getObjectByName('Suelo3');
     
     

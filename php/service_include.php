@@ -42,10 +42,40 @@ include_once("controller.php");
         $isvictory = $_POST["victory"];
         $totaltime = $_POST["time"];
 
+        $players=$_POST['playerNumber'];
+
+        
+        $results=array();
+        for($i=0;$i<$players;$i++){
+            if($i==0){
+                $player = Controller::constUpdatePlayer($idjugador,$isvictory,$score,$totaltime);
+            }else{
+                $idjugador2 = $_POST["playerid2"];
+                $score2 = $_POST["score2"];
+                $isvictory2 = $_POST["victory2"];
+                $totaltime2 = $_POST["time2"];
+                $player = Controller::constUpdatePlayer($idjugador2,$isvictory2,$score2,$totaltime2);
+            }
+            $Response=$player->upPlayer();
+            array_push($results,$Response);
+        }
+        $failed=false;
+        foreach($results as $res){
+            if(!$res){
+                $failed=true;
+            }
+        }
+       
+        if(!$failed){
+            echo json_encode(array('result'=>'true'));
+        }else{
+            echo json_encode(array('result'=>'false'));
+        }
+
         //constUpdatePlayer
-        $player = Controller::constUpdatePlayer($idjugador,$isvictory,$score,$totaltime);
+        /*$player = Controller::constUpdatePlayer($idjugador,$isvictory,$score,$totaltime);
         $response=$player->upPlayer();
-        echo json_encode(array('result'=>$response));
+        echo json_encode(array('result'=>$response));*/
         
     }else if(isset($_POST["accion"])&&strcmp($_POST["accion"],"getScores")==0){
         $tipojugador = $_POST["typePlayer"];

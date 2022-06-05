@@ -313,7 +313,8 @@ function localStorageGetInfo(){
 			idplayer2: null,
             nameofPlayer2: null,
             gameDifficulty:localStorage.getItem('gameScene'),
-			gameQuality: localStorage.getItem('graphicsConfig')
+			gameQuality: localStorage.getItem('graphicsConfig'),
+			gameSound:localStorage.getItem('soundEnable')
 		}
 		if(localStorageInfo.gameMode=="Multijugador"){
 			localStorageInfo.idplayer2=localStorage.getItem('idPlayer2');
@@ -429,13 +430,15 @@ function SetUpScene(){ //set para un solo jugador
 }
 
 function createCamera() {
-	var camera = new THREE.PerspectiveCamera(75, visibleSize.width / visibleSize.height, 0.1, 100);
+	var camera = new THREE.PerspectiveCamera(45, visibleSize.width / visibleSize.height, 0.5, 100);
 	cameras.push(camera);
 }
 function createRenderer(color) {
-	var renderer = new THREE.WebGLRenderer( {precision: "mediump" } );
+	var renderer = new THREE.WebGLRenderer( {precision: "mediump",powerPreference:'high-performance',
+	antialias:false } );
 	renderer.setClearColor(color);
-	renderer.setPixelRatio((visibleSize.width / 2) / visibleSize.height);
+	//renderer.setPixelRatio((visibleSize.width / 2) / visibleSize.height);
+	renderer.setPixelRatio(window.devicePixelRatio*0.7);
 	renderer.setSize(visibleSize.width / 2, visibleSize.height);
 
 	renderers.push(renderer);
@@ -596,7 +599,7 @@ if (escenaro1)
 
 if (escenaro2)
 {
-	modelosN2(scene,loader,monsterMixers);
+	modelosN2(scene,loader,monsterMixers,tipopersonaje);
 }
 
 
@@ -994,10 +997,12 @@ function loadPlayerS(playernumber,playertype){
 				completeLoadPlayer(playertype,"Jugador1",pos,player);
 				player.yaw=0;
 				player.forward=0;
+				player.nameplayer =localStorageInfo.idplayer1;
 				players.push(player);
 			
 				let pos2= new THREE.Vector3(2.0,17.5,5.0);
 				completeLoadPlayer(playertype,"Jugador2",pos2,player2);
+				player2.nameplayer =localStorageInfo.idplayer2;
 				var player1=scene.getObjectById("Jugador1");
 				//var player2=player1.clone();
 				players.push(player2);
@@ -1022,13 +1027,15 @@ function getYonTerrain(player,raydown,terrenito){
 }
 
 function onStartAudio(){
-
+	let soundLevel=1;
+	if (localStorageInfo.gameSound=='NO'){
+		soundLevel=0;
+	}
 	const audioLoader=new THREE.AudioLoader(); //cargador de audio
 	audioLoader.load('gameAssets/soundsfx/horror-ambience.wav', (audio)=>{
 		AmbienceSound.setBuffer(audio);
 		AmbienceSound.setLoop(true);
-		AmbienceSound.setVolume(0.15);
-		//.play();
+		soundLevel>0? AmbienceSound.setVolume(0.15): AmbienceSound.setVolume(soundLevel);
 		loadedAssets++;
 	},
     // onError callback
@@ -1038,7 +1045,6 @@ function onStartAudio(){
     audioLoader.load('gameAssets/soundsfx/level-up-02.wav', (audio)=>{
 		pickUpSound.setBuffer(audio);
 		pickUpSound.setVolume(0.4);
-		//.play();
 		loadedAssets++;
 	},
     // onError callback
@@ -1048,7 +1054,6 @@ function onStartAudio(){
     audioLoader.load('gameAssets/soundsfx/power-boost.wav', (audio)=>{
 		powerUp.setBuffer(audio);
 		powerUp.setVolume(0.4);
-		//.play();
 		loadedAssets++;
 	},
     // onError callback
@@ -1058,7 +1063,6 @@ function onStartAudio(){
     audioLoader.load('gameAssets/soundsfx/okay.wav', (audio)=>{
 		pickKey.setBuffer(audio);
 		pickKey.setVolume(0.4);
-		//.play();
 		loadedAssets++;
 	},
     // onError callback
@@ -1068,7 +1072,6 @@ function onStartAudio(){
     audioLoader.load('gameAssets/soundsfx/victory.wav', (audio)=>{
 		victorySound.setBuffer(audio);
 		victorySound.setVolume(0.5);
-		//.play();
 		loadedAssets++;
 	},
     // onError callback
@@ -1078,8 +1081,7 @@ function onStartAudio(){
     audioLoader.load('gameAssets/soundsfx/monster-growl.wav', (audio)=>{
 		monsterSound.setBuffer(audio);
 		monsterSound.setLoop(true);
-		monsterSound.setVolume(0.1);
-		//.play();
+		soundLevel>0? monsterSound.setVolume(0.1): monsterSound.setVolume(soundLevel);
 		loadedAssets++;
 	},
     // onError callback
@@ -1089,8 +1091,7 @@ function onStartAudio(){
     audioLoader.load('gameAssets/soundsfx/run.wav', (audio)=>{
 		runningChild.setBuffer(audio);
 		runningChild.setLoop(true);
-		runningChild.setVolume(0.6);
-		//.play();
+		soundLevel>0? runningChild.setVolume(0.6): runningChild.setVolume(soundLevel);
 		loadedAssets++;
 	},
     // onError callback
@@ -1099,9 +1100,7 @@ function onStartAudio(){
     });
     audioLoader.load('gameAssets/soundsfx/death.wav', (audio)=>{
 		childDeath.setBuffer(audio);
-		//childDeath.setLoop(true);
 		childDeath.setVolume(0.6);
-		//.play();
 		loadedAssets++;
 	},
     // onError callback
@@ -1163,9 +1162,9 @@ function onStart(){
 	onStartFloor('gameAssets/terrainTextures/terrain/altura3.jpg','gameAssets/terrainTextures/terrain/blendMap1.jpg',
 	'gameAssets/terrainTextures/terrain/soil.jpg','gameAssets/terrainTextures/terrain/Piedras.jpg',	
 	'gameAssets/terrainTextures/terrain/piso.jpg','gameAssets/terrainTextures/terrain/moss.jpg',-130);
+	if(localStorageInfo.typeOfPlayer=="Druida"){tipopersonaje=1;}else{tipopersonaje=0;}
 	setItemsOnGame();
 	loadPlayerS(localStorageInfo.playerNum,localStorageInfo.typeOfPlayer);
-	if(localStorageInfo.typeOfPlayer=="Druida"){tipopersonaje=1;}else{tipopersonaje=0;}
 	onStartEnemies();
 	onStartAudio();
 	if(localStorageInfo.gameMode=="Solitario"){//Multijugador
@@ -1266,17 +1265,12 @@ function getSpeed(deltaTime, player){
 				player.pBoot.active=true;
 			}
 			player.pBoot.time-=deltaTime; //vamos quitando tiempo
-			/*player.handler.children[0].material.transparent=true;
-			player.handler.children[0].material.opacity=0.5;*/
+			
 			return 20; //asignamos la velocidad especial
 		}else{
 			player.pBoot.active=false; //desactivamos
 			player.pBoot.num=player.pBoot.num-1; //quitamos el que ya utilizamos
 			player.pBoot.time=15; //reseteamos tiempo
-			//esto sirve para la capa de invisibilidad
-			/*player.handler.children[0].material.transparent=false;
-			player.handler.children[0].material.opacity=1;*/
-			//$("body").append('<button>Hey</button>');agregar botones de manera dinamica
 			return 10; //asignamos la velocidad original
 		}
 	}else{
@@ -1309,6 +1303,25 @@ function getInvisibility(deltaTime, player){
 		player.handler.children[0].material.opacity=1;
 	}
 }
+function getEnemiesOut(deltaTime, player){
+	if(player.pEye.active){
+		if(player.pEye.time>0){
+			if(player.pEye.time==15){
+				//por alguna razon lo tengo que poner antes y despues del play
+				player.pEye.active=true; 
+				powerUp.play();
+				player.pEye.active=true;
+			}
+			player.pEye.time-=deltaTime;
+		}else{
+			
+			player.pEye.active=false; //desactivamos
+			player.pEye.num=player.pEye.num-1; //quitamos el que ya utilizamos
+			player.pEye.time=15;
+		}
+
+	}
+}
 let lastState='idle';
 let lastState2='idle';
 function onUpdateSinglePlayer(deltaTime){
@@ -1319,6 +1332,7 @@ function onUpdateSinglePlayer(deltaTime){
         let state='idle';
 		player.forward=getSpeed(deltaTime,player);
 		getInvisibility(deltaTime,player);
+		getEnemiesOut(deltaTime,player);
         if(keys['W']){
         	//player.forward=10;  Hay que revisar deberia funcionar
         	player.handler.translateZ(player.forward * deltaTime);
@@ -1471,6 +1485,7 @@ function setFinalSinglePlayer(player){
         formData.append('victory',player.victory);
 		formData.append('time',finaltime);
 		formData.append('accion','updateScore');
+		formData.append('playerNumber',1);
 		$.ajax({
 			async:false,
             url     : "./php/service_include.php",
@@ -1500,7 +1515,18 @@ function setFinalSinglePlayer(player){
         });
 }
 function setFinalBothPlayers(player){
-	let playerid=localStorage.getItem('idPlayer1');
+	//TODO: VER CUAL PLAYER ES CUAL PARA INSERTAR RESULTADOS FINALEs
+	let playerid=player.nameplayer;
+	let pInA;
+	let pInB;
+	if (localStorageInfo.idplayer1==playerid){
+		pInA=0;
+		pInB=1;
+	}else{
+		pInA=1;
+		pInB=0;
+	}
+	
 		let score=0;
 		if(!player.victory){
 			score = Math.round((player.keys/keyNumber*100));
@@ -1516,12 +1542,36 @@ function setFinalBothPlayers(player){
 		fitime.setSeconds(player.timer);
 		let finaltime=fitime.toString();
 		finaltime=finaltime.substring(16,24);
+		//player2
+		let score2=0;
+		if(!players[pInB].victory){
+			score2 = Math.round((players[pInB].keys/keyNumber*100));
+		}else{
+			score2=100;
+		}
+		if (score<0){
+			score2=0;
+		}
+		//Wed Dec 31 1969 00:00:21 GMT-0600 (hora estándar central) 18-25 -1
+		let fitime2=new Date(null);
+		fitime2.setHours(0, 0, 0, 0);
+		fitime2.setSeconds(players[pInB].timer);
+		let finaltime2=fitime2.toString();
+		finaltime2=finaltime2.substring(16,24);
+
 		var formData = new FormData();
 		formData.append('playerid',playerid);
         formData.append('score',score);
         formData.append('victory',player.victory);
 		formData.append('time',finaltime);
 		formData.append('accion','updateScore');
+		formData.append('playerNumber',2);
+
+		formData.append('playerid2',players[pInB].nameplayer);
+        formData.append('score2',score2);
+        formData.append('victory2',players[pInB].victory);
+		formData.append('time2',finaltime2);
+
 		$.ajax({
 			async:false,
             url     : "./php/service_include.php",
@@ -1534,11 +1584,13 @@ function setFinalBothPlayers(player){
 			data=$.parseJSON(data);
             if(data.result){
                 //enviar los datos a la pagina
-				if(!player.victory){
+				if(!player.victory && !players[pInB].victory){ //si ambos perdieron se van mucho a game over
 					localStorage.setItem('score',score);
+					localStorage.setItem('score2',score2);
 					window.location='gameOver.html';
-				}else{
+				}else{ //con que uno gane se van a victoria
 					localStorage.setItem('score',score);
+					localStorage.setItem('score2',score2);
 					window.location='victory.html';
 				}  
             }else{
@@ -1559,12 +1611,14 @@ function onUpdateTwoPlayers(deltaTime){
         let state='idle';
 		players[0].forward=getSpeed(deltaTime,players[0]);
 		getInvisibility(deltaTime,players[0]);
+		getEnemiesOut(deltaTime,players[0]);
         if(keys['W']){
         	players[0].handler.translateZ(players[0].forward * deltaTime);
 			console.log("VColision Antes: "+players[0].forward * deltaTime);
             state='walking';
         }
         if(keys['S']){
+			players[0].forward=0;
             players[0].handler.translateZ(-players[0].forward * deltaTime);
             state='walking';
             
@@ -1669,13 +1723,13 @@ function onUpdateTwoPlayers(deltaTime){
 		if(players[0].keys==keyNumber&& !players[0].victory){ //CONDICION DE VICTORIA
 			players[0].victory=true;
 			victorySound.play();
-			setFinalSinglePlayer(players[0]);
+			setFinalBothPlayers(players[0]);
 			console.log("ganaste");
 		}
     }else{
 		if(!players[1].victory){//si no ha ganado el amigo
 			if(players[1].death){ //si no ha ganado y ya perdio el amigo tambien
-				setFinalSinglePlayer(players[0]);
+				setFinalBothPlayers(players[0]);
 			}else{
 				//show dead message
 			}
@@ -1685,15 +1739,16 @@ function onUpdateTwoPlayers(deltaTime){
     if (!players[1].death){
 		players[1].timer+=deltaTime;
     	let state2='idle';
-
+		players[1].forward=getSpeed(deltaTime,players[1]);
+		getInvisibility(deltaTime,players[1]);
+		getEnemiesOut(deltaTime,players[1]);
         if(keys['I']){
-        	players[1].forward=10;
         	players[1].handler.translateZ(players[1].forward * deltaTime);
             
             state2='walking';
         }
         if(keys['K']){
-        	players[1].forward=-10;
+        	players[1].forward=0;
             players[1].handler.translateZ(players[1].forward * deltaTime);
             state2='walking';
             
@@ -1798,13 +1853,13 @@ function onUpdateTwoPlayers(deltaTime){
 		if(players[1].keys==keyNumber&& !players[1].victory){ //CONDICION DE VICTORIA
 			players[1].victory=true;
 			victorySound.play();
-			setFinalSinglePlayer(players[1]);
+			setFinalBothPlayers(players[1]);
 			console.log("ganaste");
 		}
     }else{//perder
 		if(!players[0].victory){//si no ha ganado el amigo
 			if(players[0].death){ //si no ha ganado y ya perdio el amigo tambien
-				setFinalSinglePlayer(players[1]);
+				setFinalBothPlayers(players[1]);
 			}else{
 				//show dead message
 			}
@@ -1867,26 +1922,41 @@ function render(){
 			}
 			
 		}else{
-			//colisiones
-			const Vcolision= (player.forward * deltaTime *-1)-.5;
-			if (escenaro1)
-			{
-			singleLevel1Enemy(deltaTime,Vcolision,scene,tipopersonaje);
-			singleLevel1Colision(deltaTime,Vcolision,scene,player,0,tipopersonaje);
-			}
-			if (escenaro2)
-			{
-				singleLevel2Enemy(deltaTime,Vcolision,scene);
-				singleLevel2Colision(deltaTime,Vcolision,scene,player,0);
-
-			}
-			if (escenaro3)
-			{
-				singleLevel3(deltaTime,Vcolision,scene,player,0);
-			}
 			requestAnimationFrame(render);
 			deltaTime = clock.getDelta();
-			if(loadedAssets>=12){
+			
+			/*
+				(escenaro1 && (scene.children.length-itemsCollectable.length)>=31 && player.typeplyer=='Druida')
+				(escenaro2 && (scene.children.length-itemsCollectable.length)>=47 && player.typeplyer=='Druida')
+				(escenaro3 && (scene.children.length-itemsCollectable.length)>=47) tipo druida
+
+				(escenaro1 && (scene.children.length-itemsCollectable.length)>=26 && player.typeplyer=='Leshy') uno por si las moscas
+				(escenaro2 && (scene.children.length-itemsCollectable.length)>=40 && player.typeplyer=='Leshy')
+				(escenaro3 && (scene.children.length-itemsCollectable.length)>=47) no hay distincion
+
+			*/
+			if((escenaro1 && (scene.children.length-itemsCollectable.length)>=31 && player.typeplyer=='Druida')||
+			(escenaro2 && (scene.children.length-itemsCollectable.length)>=47 && player.typeplyer=='Druida') ||
+			(escenaro3 && (scene.children.length-itemsCollectable.length)>=47) ||
+			(escenaro1 && (scene.children.length-itemsCollectable.length)>=26 && player.typeplyer=='Leshy')||
+			(escenaro2 && (scene.children.length-itemsCollectable.length)>=40 && player.typeplyer=='Leshy')	){//
+				//colisiones se ejecutan hasta que este todo listo
+				const Vcolision= (player.forward * deltaTime *-1)-.5;
+				if (escenaro1)
+				{
+				singleLevel1Enemy(deltaTime,Vcolision,scene,player.typeplyer, player);
+				singleLevel1Colision(deltaTime,Vcolision,scene,player,0,player.typeplyer);
+				}
+				if (escenaro2)
+				{
+					singleLevel2Enemy(deltaTime,Vcolision,scene,player.typeplyer, player);
+					singleLevel2Colision(deltaTime,Vcolision,scene,player,0,player.typeplyer);
+
+				}
+				if (escenaro3)
+				{
+					singleLevel3(deltaTime,Vcolision,scene,player,0);
+				}
 				onUpdateSingle(deltaTime);
 				const time = performance.now() * 0.001;	
 				var Wat= scene.getObjectByName("Awita");
@@ -1906,16 +1976,20 @@ function renderTwo(){
 				clock.start();
 			}
 		}else{
-			const Vcolision= (players[0].forward * deltaTime *-1)-.5;
-			const Vcolision2= (players[1].forward * deltaTime *-1)-.5;
-			singleLevel1Enemy(deltaTime,Vcolision,scene);
-			singleLevel1Colision(deltaTime,Vcolision,scene,players[0],1);
-			singleLevel1Colision(deltaTime,Vcolision2,scene,players[1],2);
+			
 
 			requestAnimationFrame(renderTwo);
 			deltaTime = clock.getDelta();
 
-			if(loadedAssets>=8){
+			if(((scene.children.length-itemsCollectable.length)>=26 && player.typeplyer=='Leshy')||((scene.children.length-itemsCollectable.length)>=31 && player.typeplyer=='Druida')){
+				const Vcolision= (players[0].forward * deltaTime *-1)-.5;
+				const Vcolision2= (players[1].forward * deltaTime *-1)-.5;
+
+				singleLevel1Enemy(deltaTime,Vcolision,scene,players[0].typeplyer, players[0]);
+				//singleLevel1Enemy(deltaTime,Vcolision,scene,players[1].typeplyer, players[1]);
+				singleLevel1Colision(deltaTime,Vcolision,scene,players[0],1,players[0].typeplyer);
+				singleLevel1Colision(deltaTime,Vcolision2,scene,players[1],2,players[1].typeplyer);
+				
 				onUpdateMulti(deltaTime);
 				
 				renderers[0].render(scene, cameras[0]);
