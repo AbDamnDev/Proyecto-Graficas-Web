@@ -19,8 +19,12 @@ class DAO extends Conexion{
     }
     protected function updatePlayer($victoria,$puntuacion,$tiempo,$id){
         try{
-            $stmt= $this->connect()->prepare('UPDATE JUEGO SET victoria = :victory ,puntuacion = :score ,duracion = :stime WHERE  id = :spid;');
-            $stmt->bindValue(':victory', (int)$victoria, PDO::PARAM_BOOL);
+            if ($victoria==1){
+                $stmt= $this->connect()->prepare('UPDATE JUEGO SET victoria = :victory ,puntuacion = :score ,duracion = :stime WHERE  id = :spid;');
+                $stmt->bindValue(':victory', $victoria, PDO::PARAM_BOOL);
+            }else{
+                $stmt= $this->connect()->prepare('UPDATE JUEGO SET puntuacion = :score ,duracion = :stime WHERE  id = :spid;');
+            }
             $stmt->bindValue(':score', $puntuacion, PDO::PARAM_INT);
             $stmt->bindValue(':stime', $tiempo);
             $stmt->bindValue(':spid', $id, PDO::PARAM_INT);

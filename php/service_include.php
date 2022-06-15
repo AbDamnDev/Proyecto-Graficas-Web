@@ -40,6 +40,11 @@ include_once("controller.php");
         $idjugador = $_POST["playerid"];
         $score = $_POST["score"];
         $isvictory = $_POST["victory"];
+        if($isvictory=="false"){
+            $isvictory=0;
+        }else{
+            $isvictory=1;
+        }
         $totaltime = $_POST["time"];
 
         $players=$_POST['playerNumber'];
@@ -53,6 +58,11 @@ include_once("controller.php");
                 $idjugador2 = $_POST["playerid2"];
                 $score2 = $_POST["score2"];
                 $isvictory2 = $_POST["victory2"];
+                if($isvictory2=="false"){
+                    $isvictory2=0;
+                }else{
+                    $isvictory2=1;
+                }
                 $totaltime2 = $_POST["time2"];
                 $player = Controller::constUpdatePlayer($idjugador2,$isvictory2,$score2,$totaltime2);
             }

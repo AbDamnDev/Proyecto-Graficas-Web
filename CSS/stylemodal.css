@@ -1,3 +1,7 @@
+:root {
+    --color-white: #fff;
+    --color-red: #d3cc70;
+}
 body { 
 margin: 0; 
 }
@@ -12,7 +16,69 @@ margin: 0;
     left: 15%;
     backdrop-filter: blur(10px); /*no parece ser reconocido*/
     background-color: rgba(0, 128, 255, 0.5);
+   
     
     border-radius: 20px;   
     
 }
+.progress-bar-container{
+    position: absolute;
+    left:50%;
+    top: 50%;
+    transform: translate(-50%,-50%);
+    width: 100%;
+    height: 100%;
+    background-color:  rgba(82, 91, 100, 0.5);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background-image: url("MENU.jpg");
+    background-repeat: no-repeat;
+    background-size: contain;
+    background-position: 50% 50%;
+  
+}
+.pause-menu-container{
+    position: absolute;
+    left:50%;
+    top: 50%;
+    transform: translate(-50%,-50%);
+    width: 100%;
+    height: 100%;
+    background-color:  rgba(82, 91, 100, 0.5);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background-image: url("PAUSA.png");
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: 50% 50%;
+  
+}
+#progress-bar{
+    width: 30%;
+    margin-top: 0.5%;
+    height: 2%;
+}
+label{
+    color:white;
+    font-size: 2rem;
+}
+button {
+    background-color: transparent;
+    font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+    font-size:x-large;
+    border: 2px solid;
+    border-radius: 10px;
+    cursor: pointer;
+    margin: 2px 2px;
+    padding: 1.2rem 2.8rem;
+    color: var(--color-white);
+    align-content: center;
+  }
+
+  button:focus {
+    outline: 0;
+  }

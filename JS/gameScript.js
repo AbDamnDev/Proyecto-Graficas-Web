@@ -4,6 +4,7 @@ import { Water } from 'https://cdn.jsdelivr.net/npm/three@0.117.1/examples/jsm/o
 import { Sky } from 'https://cdn.jsdelivr.net/npm/three@0.117.1/examples/jsm/objects/Sky.js';
 import {FBXLoader} from 'https://cdn.jsdelivr.net/npm/three@0.117.1/examples/jsm/loaders/FBXLoader.js';
 import {SubdivisionModifier} from 'https://cdn.jsdelivr.net/npm/three@0.117.1/examples/jsm/modifiers/SubdivisionModifier.js';
+import{LoadingManager} from 'https://cdn.jsdelivr.net/npm/three@0.117.1/src/loaders/LoadingManager.js';
 import * as LSManager from './localStorageManager.js';
 import { modelosN1 } from './Modelos.js';
 import { modelosN2 } from './Modelos.js';
@@ -13,6 +14,11 @@ import { singleLevel1Enemy } from './Colisiones.js';
 import { singleLevel2Colision } from './Colisiones.js';
 import { singleLevel2Enemy } from './Colisiones.js';
 import { singleLevel3 } from './Colisiones.js';
+
+
+const pauseMenuContainer=document.querySelector('.pause-menu-container');
+pauseMenuContainer.style.display='none';
+
 
 var itemsPosition= new Array();
 var keyNumber=4;
@@ -27,6 +33,9 @@ var itemsCollectable=[];
 var tipopersonaje;
 //Variabel pausa
 var isPaused = false;
+var startButton = document.getElementById( 'resumeGame' );
+
+
 
 //estas variables son para multijugador local
 var cameras=[];
@@ -50,6 +59,7 @@ var pos1_g=1;
 
 
 var loader; //variable que sirve como cargador FBX
+const loadingManager= new THREE.LoadingManager();
 var renderer;
 var clock;
 var deltaTime;
@@ -166,6 +176,18 @@ var monsterAnim=null;
 var druidAnim=null;
 var druidMixers=new Array();
 var monsterMixers=new Array();
+
+//quitar pausa
+startButton.onclick = function StartAnimation() {
+	isPaused=false;
+	clock.start();
+	if(localStorageInfo.gameMode=="Solitario"){
+	requestAnimationFrame(render);
+	}else{
+		requestAnimationFrame(renderTwo);
+	}
+	pauseMenuContainer.style.display='none';
+}
 //Aguwa
 
 
@@ -204,7 +226,6 @@ function buildWater() {
 	const waterUniforms = water.material.uniforms;
 	return water;
   }
-
 
 //shaders en constantes
 const _VS= `
@@ -300,6 +321,15 @@ void main()
     gl_FragColor = vec4( glow, 1.0 );
 }`;
 
+const progressBar=document.getElementById('progress-bar');
+loadingManager.onProgress=function(url, loaded, total){
+	progressBar.value=(loaded/total)*100;
+}
+const progressBarContainer=document.querySelector('.progress-bar-container');
+
+loadingManager.onLoad=function(){
+	progressBarContainer.style.display='none';
+}
 function localStorageGetInfo(){
 	if(localStorage.length>0){
 		//typeOfPlayer,gameScene,gameMode,namePlayer1,namePlayer2,idPlayer1,idPlayer2
@@ -328,7 +358,7 @@ function SetUpScene(){ //set para un solo jugador
 	localStorageGetInfo();
 	scene=new THREE.Scene(); //crea la escena
 	clock= new THREE.Clock();
-	loader=new FBXLoader();
+	loader=new FBXLoader(loadingManager);
 	listener = new THREE.AudioListener(); //cargador de audio
 	
 
@@ -389,8 +419,8 @@ function SetUpScene(){ //set para un solo jugador
 			createCamera();
 			createCamera(); //almacenadas en cameras[0] y cameras[1]
 
-			createRenderer(new THREE.Color(0, 0, 0));
-			createRenderer(new THREE.Color(0.0, 0, 0));
+			createRenderer(new THREE.Color(1, 1, 1));
+			createRenderer(new THREE.Color(1, 1, 1));
 
 			cameras[0].add(listener);
 			cameras[1].add(listener);
@@ -440,7 +470,7 @@ function createRenderer(color) {
 	//renderer.setPixelRatio((visibleSize.width / 2) / visibleSize.height);
 	renderer.setPixelRatio(window.devicePixelRatio*0.7);
 	renderer.setSize(visibleSize.width / 2, visibleSize.height);
-
+	renderer.physicallyCorrectLights=true;
 	renderers.push(renderer);
 }
 
@@ -466,7 +496,7 @@ function loadOBJWithMTL(path, objFile, mtlFile, _onLoadCallback) {
 
 
 function onStartFloor(bumpmap,blendmap,basemap,redmap,greenmap,bluemap,heightPos){ //esta funcion tambien hay que optimizarla para que cargue otras cosas
-	const textureLoader=new THREE.TextureLoader();
+	const textureLoader=new THREE.TextureLoader(loadingManager);
     const textureRepeat=100;
     const bumpScale=200;
     textureLoader.load(bumpmap,(bump)=>{
@@ -667,7 +697,7 @@ function loadSpecialItems(keysNumber){
 		itemsPosition[11]=new THREE.Vector3(-57,17.5,-26);
 		itemsPosition[12]=new THREE.Vector3(-16.5,17.5,-36);
 	}
-	const billLoader=new THREE.TextureLoader();
+	const billLoader=new THREE.TextureLoader(loadingManager);
 	if (localStorageInfo.typeOfPlayer=="Druida"){
 		var botasnum=Math.floor(Math.random() * (4-1))+1;
 		var ojosnum=Math.floor(Math.random() * (4-1))+1;
@@ -980,7 +1010,10 @@ function completeLoadPlayer(type, nombre, posicion,player){
 			scene.add(model);
 			player.typeplyer='Leshy';
         	
-			
+			const light = new THREE.PointLight( 0x76bda4, 1, 20);
+			light.position.set( 0, 0, 0 );
+			light.castShadow = true; // default false
+			player.handler.add( light );
 
 		});
 
@@ -1008,7 +1041,7 @@ function loadPlayerS(playernumber,playertype){
 				players.push(player2);
 		}
 
-	}
+}
 
 
 function getYonTerrain(player,raydown,terrenito){
@@ -1031,7 +1064,7 @@ function onStartAudio(){
 	if (localStorageInfo.gameSound=='NO'){
 		soundLevel=0;
 	}
-	const audioLoader=new THREE.AudioLoader(); //cargador de audio
+	const audioLoader=new THREE.AudioLoader(loadingManager); //cargador de audio
 	audioLoader.load('gameAssets/soundsfx/horror-ambience.wav', (audio)=>{
 		AmbienceSound.setBuffer(audio);
 		AmbienceSound.setLoop(true);
@@ -1113,7 +1146,7 @@ function onStartParticles(){
 	const vertices = [];
 	const materials = [];
 
-	const fireLoader=new THREE.TextureLoader();
+	const fireLoader=new THREE.TextureLoader(loadingManager);
 	const text=fireLoader.load( 'gameAssets/3dModels/billboards/spark.png');
 	for ( let i = 0; i < 200; i ++ ) {
 
@@ -1487,7 +1520,7 @@ function setFinalSinglePlayer(player){
 		formData.append('accion','updateScore');
 		formData.append('playerNumber',1);
 		$.ajax({
-			async:false,
+			async:true,
             url     : "./php/service_include.php",
             method  : "POST",
             data    : formData,
@@ -1573,7 +1606,7 @@ function setFinalBothPlayers(player){
 		formData.append('time2',finaltime2);
 
 		$.ajax({
-			async:false,
+			async:true,
             url     : "./php/service_include.php",
             method  : "POST",
             data    : formData,
@@ -1915,12 +1948,7 @@ function render(){
 
 		if(isPaused){
 			clock.stop();
-			if(keys['R']){
-				isPaused=false;
-				clock.start();
-			
-			}
-			
+			pauseMenuContainer.style.display='block';
 		}else{
 			requestAnimationFrame(render);
 			deltaTime = clock.getDelta();
@@ -1971,10 +1999,7 @@ function render(){
 function renderTwo(){
 		if(isPaused){
 			clock.stop();
-			if(keys['R']){
-				isPaused=false;
-				clock.start();
-			}
+			pauseMenuContainer.style.display='block';
 		}else{
 			
 

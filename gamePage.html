@@ -8,6 +8,18 @@
 	<script type="text/javascript" src="JS/libs/jquery-3.6.0.min.js"></script>
 </head>
 <body>
+	
+	<div class="pause-menu-container">
+		<center><div class="input_table">
+			<center><button id="resumeGame" >Reanudar Partida</button></center>
+			<br>
+			<center><button onclick="window.location = 'index.html'">Salir al menu</button></center>
+		</div></center>
+	</div>
+	<div class="progress-bar-container">
+		<label for="progress-bar">Loading..</label>
+		<progress id="progress-bar" value="0" max="100"></progress>
+	</div>
 <script type="module" src="JS/gameScript.js"></script>
 </body>
 </html>

@@ -205,17 +205,14 @@ function singleLevel1Enemy(deltatime,Vcolision,scene,typep,player)
 {
     if(typep=='Druida')
     {
-    const E1 =scene.getObjectByName('C1');
-	const E2 =scene.getObjectByName('C2');
-	const E3 =scene.getObjectByName('C3');
-	const E4 =scene.getObjectByName('C4');
-    /*player.handler.children[0].material.transparent=true;
-			player.handler.children[0].material.opacity=0.5; */
-    let opacity=1;
-    let transparent=false;
+    var E1 =scene.getObjectByName('C1');
+	var E2 =scene.getObjectByName('C2');
+	var E3 =scene.getObjectByName('C3');
+	var E4 =scene.getObjectByName('C4');
+    let vis=true;
     if (!player.pEye.active){
-        opacity=1;
-        transparent=false;
+        vis=true;
+        
         if(pos_a==1)
         {
         E1.position.z+=vel;
@@ -300,17 +297,12 @@ function singleLevel1Enemy(deltatime,Vcolision,scene,typep,player)
             }
         }
     }else{
-        opacity=0;
-        transparent=true;  
+        vis=false;  
     }
-        E1.children[0].material.transparent=transparent;
-        E1.children[0].material.opacity=opacity;
-        E2.children[0].material.transparent=transparent;
-        E2.children[0].material.opacity=opacity;
-        E3.children[0].material.transparent=transparent;
-        E3.children[0].material.opacity=opacity;
-        E4.children[0].material.transparent=transparent;
-        E4.children[0].material.opacity=opacity;
+        E1.visible=vis;
+        E2.visible=vis;
+        E3.visible=vis;
+        E4.visible=vis;
     }
 }
 function singleLevel2Colision(deltatime,Vcolision,scene,player,Jugadornum,typep){
@@ -568,11 +560,9 @@ function singleLevel2Enemy(deltatime,Vcolision,scene,typep,player){
     const EB5 =scene.getObjectByName('CB5');
     const EB6 =scene.getObjectByName('CB6');
     const EB7 =scene.getObjectByName('CB7');
-    let opacity=1;
-    let transparent=false;
+    let vis=true;
         if (!player.pEye.active){
-            opacity=1;
-            transparent=false;
+            vis=true;
             //1
             if(pos1_a==1)
             {
@@ -721,23 +711,15 @@ function singleLevel2Enemy(deltatime,Vcolision,scene,typep,player){
                 }
             }
         }else{
-            opacity=0;
-            transparent=true; 
+            vis=false; 
         }
-        EB1.children[0].material.transparent=transparent;
-        EB1.children[0].material.opacity=opacity;
-        EB2.children[0].material.transparent=transparent;
-        EB2.children[0].material.opacity=opacity;
-        EB3.children[0].material.transparent=transparent;
-        EB3.children[0].material.opacity=opacity;
-        EB4.children[0].material.transparent=transparent;
-        EB4.children[0].material.opacity=opacity;
-        EB5.children[0].material.transparent=transparent;
-        EB5.children[0].material.opacity=opacity;
-        EB6.children[0].material.transparent=transparent;
-        EB6.children[0].material.opacity=opacity;
-        EB7.children[0].material.transparent=transparent;
-        EB7.children[0].material.opacity=opacity;
+        EB1.visible=vis;
+        EB2.visible=vis; 
+        EB3.visible=vis;
+        EB4.visible=vis;
+        EB5.visible=vis;
+        EB6.visible=vis;
+        EB7.visible=vis;
     }
 //
 }
@@ -754,7 +736,7 @@ function singleLevel3(deltatime,Vcolision,scene,player,Jugadornum){
 		const CC3 =scene.getObjectByName('CC3');
 
 
-		CC1.rotation.y+=VelGiro;
+		//CC1.rotation.y+=VelGiro;
 
 		const S_3 = scene.getObjectByName('Suelo3');
 		const S_4 = scene.getObjectByName('Suelo4');
